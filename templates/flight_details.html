@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.name }} - LMJ（长征）集团管理平台{% endblock %}
+
+{% block content %}
+    <div class="card mb-6">
+        <div class="card-body">
+            <div class="d-flex justify-content-between items-start mb-4">
+                <h1 class="h2">{{ event.name }}</h1>
+                <span class="badge badge-enrolling">报名中</span>
+            </div>
+            
+            <div class="row mb-6">
+                <div class="col-md-6">
+                    <div class="flight-info">
+                        <i class="far fa-calendar"></i>
+                        <span><strong>创建时间:</strong> {{ event.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    
+                    <div class="flight-info">
+                        <i class="fas fa-users"></i>
+                        <span><strong>报名人数:</strong> {{ participants|length }}人</span>
+                    </div>
+                    
+                    {% if not current_user.is_authenticated %}
+                        <div class="bg-warning text-white p-3 rounded-lg mt-4">
+                            请先<a href="{{ url_for('login') }}" class="text-white font-bold">登录</a>后再报名参加
+                        </div>
+                    {% else %}
+                        {% set user_participated = false %}
+                        {% for p in participants %}
+                            {% if p.user_id == current_user.id %}
+                                {% set user_participated = true %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if not user_participated %}
+                            <a href="{{ url_for('join_flight', event_id=event.id) }}" class="btn btn-primary mt-4">
+                                立即报名
+                            </a>
+                        {% else %}
+                            <div class="bg-success text-white p-3 rounded-lg mt-4">
+                                您已成功报名此联飞活动！
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <img src="https://picsum.photos/id/1016/600/400" alt="飞行路线" class="img-fluid rounded-lg shadow-sm">
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h2 class="h4 mb-3">已报名参与者</h2>
+                <div class="card">
+                    <div class="card-body">
+                        {% if participants %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">飞行员姓名</th>
+                                            <th scope="col">航班号</th>
+                                            <th scope="col">机型</th>
+                                            <th scope="col">报名时间</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for participant in participants %}
+                                            <tr>
+                                                <td>{{ participant.pilot_name }}</td>
+                                                <td>{{ participant.flight_number }}</td>
+                                                <td>{{ participant.aircraft_type }}</td>
+                                                <td>{{ participant.registered_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-center text-muted">暂无参与者报名</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-center">
+                <a href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('index') }}" class="btn btn-outline-primary">返回</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

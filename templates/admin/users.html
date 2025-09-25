@@ -1,0 +1,215 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block page_title %}用户管理{% endblock %}
+
+{% block admin_content %}
+<div class="admin-users">
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3>用户列表</h3>
+        </div>
+        <div class="admin-card-body">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>注册时间</th>
+                        <th>管理员</th>
+                        <th>副主</th>
+                        <th>{% if current_user.is_owner is defined and current_user.is_owner %}系统主人{% else %}管理员{% endif %}</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>
+                            {{ user.username }}
+                            {% if current_user.is_owner is defined and current_user.is_owner %}
+                            <form action="{{ url_for('admin_update_username', user_id=user.id) }}" method="POST" style="display: inline; margin-left: 10px;">
+                                <input type="text" name="new_username" placeholder="新用户名" style="width: 100px; padding: 2px 4px; font-size: 12px;">
+                                <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm" style="padding: 2px 8px; font-size: 12px;">
+                                    修改
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                        <td>{% if user.created_at %}{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}{% else %}N/A{% endif %}</td>
+                        <td>
+                            {% if user.is_admin %}
+                            <span class="admin-badge admin-badge-green">是</span>
+                            {% else %}
+                            <span class="admin-badge admin-badge-gray">否</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_co_owner %}
+                            <span class="admin-badge admin-badge-blue">是</span>
+                            {% else %}
+                            <span class="admin-badge admin-badge-gray">否</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if current_user.is_owner is defined and current_user.is_owner %}
+                                {% if user.is_owner %}
+                                <span class="admin-badge admin-badge-red">是</span>
+                                {% else %}
+                                <span class="admin-badge admin-badge-gray">否</span>
+                                {% endif %}
+                            {% else %}
+                                {% if user.is_admin %}
+                                <span class="admin-badge admin-badge-green">是</span>
+                                {% else %}
+                                <span class="admin-badge admin-badge-gray">否</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="admin-btn-group">
+                                <!-- 管理员权限操作按钮 - 只有系统主人才可以操作 -->
+                                {% if current_user.is_owner %}
+                                    {% if user.id != current_user.id %}
+                                        {% if not user.is_admin %}
+                                            <form action="{{ url_for('admin_make_admin', user_id=user.id) }}" method="POST" style="display: inline;">
+                                                <button type="submit" class="admin-btn admin-btn-success admin-btn-sm">
+                                                    添加管理员
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <form action="{{ url_for('admin_remove_admin', user_id=user.id) }}" method="POST" style="display: inline;">
+                                                <button type="submit" class="admin-btn admin-btn-danger admin-btn-sm">
+                                                    移除管理员
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                                
+                                <!-- 副主权限操作按钮 - 只有系统主人才可以操作 -->
+                                {% if current_user.is_owner %}
+                                    {% if user.id != current_user.id %}
+                                        {% if user.is_co_owner %}
+                                            <form action="{{ url_for('admin_remove_co_owner', user_id=user.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('确定要移除用户 {{ user.username }} 的副主权限吗？');">
+                                                <button type="submit" class="admin-btn admin-btn-warning admin-btn-sm">
+                                                    移除副主
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                                
+                                <!-- 删除用户按钮 -->
+                                {% if not user.is_owner and not user.is_admin %}
+                                <form action="{{ url_for('admin_delete_user', user_id=user.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('确定要删除用户 {{ user.username }} 吗？此操作不可撤销！');">
+                                    <button type="submit" class="admin-btn admin-btn-danger admin-btn-sm">
+                                        删除用户
+                                    </button>
+                                </form>
+                                {% elif user.is_owner %}
+                                <span class="admin-action-text">主人账号</span>
+                                {% elif user.is_co_owner %}
+                                <span class="admin-action-text">副主账号</span>
+                                {% elif user.is_admin %}
+                                <span class="admin-action-text">管理员</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 徽章样式 */
+    .admin-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .admin-badge-green {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    
+    .admin-badge-blue {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+    
+    .admin-badge-gray {
+        background-color: #f3f4f6;
+        color: #4b5563;
+    }
+    
+    /* 操作文本样式 */
+    .admin-action-text {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    /* 按钮样式 */
+    .admin-btn {
+        padding: 0.25rem 0.5rem;
+        border: none;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .admin-btn-success {
+        background-color: #10b981;
+        color: white;
+    }
+    
+    .admin-btn-success:hover {
+        background-color: #059669;
+    }
+    
+    .admin-btn-danger {
+        background-color: #ef4444;
+        color: white;
+    }
+    
+    .admin-btn-danger:hover {
+        background-color: #dc2626;
+    }
+    
+    .admin-btn-primary {
+        background-color: #3b82f6;
+        color: white;
+    }
+    
+    .admin-btn-primary:hover {
+        background-color: #2563eb;
+    }
+    
+    .admin-btn-warning {
+        background-color: #f59e0b;
+        color: white;
+    }
+    
+    .admin-btn-warning:hover {
+        background-color: #d97706;
+    }
+    
+    .admin-btn-sm {
+        padding: 0.125rem 0.375rem;
+        font-size: 0.75rem;
+    }
+    
+    .admin-btn-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+</style>
+{% endblock %}

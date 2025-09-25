@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}报名参加联飞活动 - LMJ（长征）集团管理平台{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-center mb-6">
+                        <h2 class="h3">报名参加：{{ event.name }}</h2>
+                        <p class="text-muted">请填写以下信息完成报名</p>
+                    </div>
+                    <form method="POST" action="{{ url_for('join_flight', event_id=event.id) }}">
+                        <div class="mb-4">
+                            <div class="d-flex items-center mb-2">
+                                <i class="fas fa-user text-primary mr-2"></i>
+                                <label for="pilot_name" class="form-label">飞行员姓名</label>
+                            </div>
+                            <input type="text" class="form-control" id="pilot_name" name="pilot_name" required placeholder="请输入您的姓名">
+                        </div>
+                        <div class="mb-4">
+                            <div class="d-flex items-center mb-2">
+                                <i class="fas fa-plane text-primary mr-2"></i>
+                                <label for="flight_number" class="form-label">航班号</label>
+                            </div>
+                            <input type="text" class="form-control" id="flight_number" name="flight_number" required placeholder="请输入航班号（如：CA1234）">
+                        </div>
+                        <div class="mb-4">
+                            <div class="d-flex items-center mb-2">
+                                <i class="fas fa-comment-dots text-primary mr-2"></i>
+                                <label for="qq_number" class="form-label">QQ号码</label>
+                            </div>
+                            <input type="text" class="form-control" id="qq_number" name="qq_number" required placeholder="请输入您的QQ号码">
+                        </div>
+                        <div class="mb-6">
+                            <div class="d-flex items-center mb-2">
+                                <i class="fas fa-space-shuttle text-primary mr-2"></i>
+                                <label for="aircraft_type" class="form-label">机型</label>
+                            </div>
+                            <input type="text" class="form-control" id="aircraft_type" name="aircraft_type" required placeholder="请输入机型（如：B737-800）">
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">提交报名</button>
+                        </div>
+                    </form>
+                    <div class="text-center mt-4 text-muted">
+                        <p>联飞活动创建于: {{ event.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

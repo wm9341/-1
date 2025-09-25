@@ -1,0 +1,253 @@
+{% extends "admin/admin_base.html" %}
+
+{% block page_title %}管制员管理{% endblock %}
+
+{% block admin_content %}
+<div class="admin-controllers">
+    <!-- 添加管制员按钮 -->
+    <div class="mb-4">
+        <button class="admin-btn admin-btn-success" data-toggle="modal" data-target="#addControllerModal">
+            <i class="fas fa-plus"></i> 添加管制员
+        </button>
+    </div>
+    
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3>管制员列表</h3>
+        </div>
+        <div class="admin-card-body">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>管制员名称</th>
+                        <th>工号</th>
+                        <th>管制范围</th>
+                        <th>在线状态</th>
+                        <th>创建时间</th>
+                        <th>关联用户</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for controller in controllers %}
+                    <tr>
+                        <td>{{ controller.id }}</td>
+                        <td>{{ controller.name }}</td>
+                        <td>{{ controller.frequency }}</td>
+                        <td>{{ controller.control_range }}</td>
+                        <td>
+                            <span class="admin-badge admin-badge-gray">正常</span>
+                        </td>
+                        <td>{{ controller.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>
+                            {% if controller.user %}
+                            {{ controller.user.username }}
+                            {% else %}
+                            <span class="admin-badge admin-badge-gray">未关联</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="admin-btn-group">
+                                <button class="admin-btn admin-btn-primary" data-toggle="modal" data-target="#editControllerModal" data-id="{{ controller.id }}" data-name="{{ controller.name }}" data-frequency="{{ controller.frequency }}" data-control-range="{{ controller.control_range }}">
+                                    编辑
+                                </button>
+                                <form action="{{ url_for('admin_controllers_delete', controller_id=controller.id) }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="admin-btn admin-btn-danger" onclick="return confirm('确定要删除这个管制员吗？');">
+                                        删除
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 添加管制员模态框 -->
+<div id="addControllerModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content" style="background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 50%; max-width: 600px; border-radius: 8px;">
+        <div class="modal-header" style="margin-bottom: 20px;">
+            <h2>添加管制员</h2>
+        </div>
+        <form action="{{ url_for('admin_controllers_add') }}" method="POST">
+            <div class="form-group">
+                <label for="controller_user_id">关联用户 <span style="color:red;">*</span></label>
+                <select id="controller_user_id" name="controller_user_id" class="form-control" required>
+                    <option value="">请选择用户</option>
+                    {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="controller_name">管制员名称 <span style="color:red;">*</span></label>
+                <input type="text" id="controller_name" name="controller_name" class="form-control" required>
+                <small class="form-text text-muted">请输入与用户名相关的管制员名称</small>
+            </div>
+            <div class="form-group">
+                <label for="controller_frequency">工号 <span style="color:red;">*</span> <small style="color:gray;">(5-6个字符)</small></label>
+                <input type="text" id="controller_frequency" name="controller_frequency" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="controller_range">管制范围 <span style="color:red;">*</span></label>
+                <input type="text" id="controller_range" name="controller_range" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="controller_online">在线状态</label>
+                <input type="checkbox" id="controller_online" name="controller_online" style="margin-left: 10px;">
+            </div>
+            <div class="form-group">
+                <button type="submit" class="admin-btn admin-btn-success">保存</button>
+                <button type="button" class="admin-btn admin-btn-secondary" onclick="document.getElementById('addControllerModal').style.display='none'">取消</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 编辑管制员模态框 -->
+<div id="editControllerModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content" style="background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 50%; max-width: 600px; border-radius: 8px;">
+        <div class="modal-header" style="margin-bottom: 20px;">
+            <h2>编辑管制员</h2>
+        </div>
+        <form id="editControllerForm" action="" method="POST">
+            <input type="hidden" id="edit_controller_id" name="controller_id">
+            <div class="form-group">
+                <label for="edit_controller_user_id">关联用户 <span style="color:red;">*</span></label>
+                <select id="edit_controller_user_id" name="controller_user_id" class="form-control" required>
+                    <option value="">请选择用户</option>
+                    {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="edit_controller_name">管制员名称 <span style="color:red;">*</span></label>
+                <input type="text" id="edit_controller_name" name="controller_name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="edit_controller_frequency">工号 <span style="color:red;">*</span> <small style="color:gray;">(5-6个字符)</small></label>
+                <input type="text" id="edit_controller_frequency" name="controller_frequency" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="edit_controller_range">管制范围 <span style="color:red;">*</span></label>
+                <input type="text" id="edit_controller_range" name="controller_range" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="admin-btn admin-btn-primary">更新</button>
+                <button type="button" class="admin-btn admin-btn-secondary" onclick="document.getElementById('editControllerModal').style.display='none'">取消</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* 徽章样式 */
+    .admin-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .admin-badge-green {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    
+    .admin-badge-gray {
+        background-color: #f3f4f6;
+        color: #4b5563;
+    }
+    
+    /* 表单样式 */
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        font-size: 1rem;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #374151;
+    }
+</style>
+
+<script>
+    // 简单的模态框控制脚本
+    document.addEventListener('DOMContentLoaded', function() {
+        // 获取所有带有data-toggle="modal"属性的按钮
+        const modalButtons = document.querySelectorAll('[data-toggle="modal"]');
+        
+        modalButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const modal = document.querySelector(targetId);
+                if (modal) {
+                    modal.style.display = 'block';
+                }
+                
+                // 如果是编辑按钮，填充表单数据
+                if (targetId === '#editControllerModal') {
+                    const controllerId = this.getAttribute('data-id');
+                    const controllerName = this.getAttribute('data-name');
+                    const controllerFrequency = this.getAttribute('data-frequency');
+                    const controllerRange = this.getAttribute('data-control-range');
+                    
+                    document.getElementById('edit_controller_id').value = controllerId;
+                    document.getElementById('edit_controller_name').value = controllerName;
+                    document.getElementById('edit_controller_frequency').value = controllerFrequency;
+                    document.getElementById('edit_controller_range').value = controllerRange;
+                    
+                    // 设置表单提交路径，包含controller_id参数
+                    document.getElementById('editControllerForm').action = `{{ url_for('admin_controllers_edit', controller_id=0) }}`.replace('0', controllerId);
+                    
+                    // 获取当前管制员关联的用户ID
+                    // 从数据库获取当前管制员信息
+                    fetch(`/admin/controllers/get_user_id/${controllerId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // 选择对应的用户
+                            const userSelect = document.getElementById('edit_controller_user_id');
+                            userSelect.value = data.user_id || '';
+                        })
+                        .catch(error => {
+                            console.error('获取用户信息失败:', error);
+                        });
+                }
+            });
+        });
+        
+        // 点击模态框外部关闭模态框
+        window.addEventListener('click', function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock %}

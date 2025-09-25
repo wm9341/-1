@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMJ（长征）集团管理平台</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 基础重置和通用样式 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* 容器 */
+        .container-fluid {
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            margin-right: auto;
+            margin-left: auto;
+        }
+        
+        .ml-auto {
+            margin-left: auto;
+        }
+        
+        /* 导航栏 */
+        .navbar {
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 1rem;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            min-height: 56px;
+        }
+        
+        .navbar-brand {
+            display: inline-block;
+            padding-top: 0.3125rem;
+            padding-bottom: 0.3125rem;
+            margin-right: 1rem;
+            font-size: 1.25rem;
+            line-height: inherit;
+            white-space: nowrap;
+            color: #1890ff !important;
+            font-weight: bold;
+            font-size: 1.5rem;
+            text-decoration: none;
+        }
+        
+        /* 按钮样式 */
+        .btn {
+            display: inline-block;
+            font-weight: 400;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            user-select: none;
+            border: 1px solid transparent;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            border-radius: 0.25rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .login-btn {
+            color: #666;
+            background-color: white;
+            border: 1px solid #d9d9d9;
+            margin-right: 0.5rem;
+        }
+        
+        .login-btn:hover {
+            color: #1890ff;
+            border-color: #1890ff;
+        }
+        
+        .register-btn {
+            color: white;
+            background-color: #1890ff;
+            border: 1px solid #1890ff;
+        }
+        
+        .register-btn:hover {
+            background-color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .admin-btn {
+            color: white;
+            background-color: #52c41a;
+            border: 1px solid #52c41a;
+            margin-right: 0.5rem;
+        }
+        
+        .admin-btn:hover {
+            background-color: #73d13d;
+            border-color: #73d13d;
+        }
+        
+        /* 主要内容区域 */
+        .main-container {
+            display: flex;
+            min-height: calc(100vh - 56px);
+        }
+        
+        /* 侧边导航栏 */
+        .sidebar {
+            width: 240px;
+            background-color: white;
+            border-right: 1px solid #e8e8e8;
+            padding: 1.5rem 0;
+            position: fixed;
+            height: calc(100vh - 56px);
+            overflow-y: auto;
+        }
+        
+        .sidebar-item {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+        
+        .sidebar-item:hover {
+            background-color: #f0f2f5;
+            color: #1890ff;
+        }
+        
+        .sidebar-item.active {
+            background-color: #e6f7ff;
+            color: #1890ff;
+            border-right: 3px solid #1890ff;
+        }
+        
+        .sidebar-item i {
+            margin-right: 0.75rem;
+        }
+        
+        .sidebar-item .dropdown-icon {
+            margin-left: auto;
+            transition: transform 0.3s;
+        }
+        
+        .sidebar-item.active .dropdown-icon {
+            transform: rotate(90deg);
+        }
+        
+        /* 内容区域 */
+        .content {
+            margin-left: 240px;
+            padding: 1.5rem;
+            width: calc(100% - 240px);
+            min-height: calc(100vh - 56px);
+        }
+        
+        /* 卡片样式 */
+        .card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            word-wrap: break-word;
+            background-color: #fff;
+            background-clip: border-box;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
+            margin-bottom: 1rem;
+        }
+        
+        .card-body {
+            flex: 1 1 auto;
+            min-height: 1px;
+            padding: 1.25rem;
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+        
+        /* 徽章样式 */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 4px;
+        }
+        
+        .badge-enrolling {
+            background-color: #e6f7ff;
+            color: #1890ff;
+        }
+        
+        /* 航班信息样式 */
+        .flight-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            color: #666;
+            font-size: 0.875rem;
+        }
+        
+        .flight-info i {
+            margin-right: 0.5rem;
+            color: #999;
+        }
+        
+        /* 分页样式 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+            padding-left: 0;
+            list-style: none;
+        }
+        
+        .pagination li {
+            margin: 0 5px;
+        }
+        
+        /* 搜索栏样式 */
+        .search-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1.5rem;
+        }
+        
+        .search-input {
+            width: 250px;
+            border-radius: 4px;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .search-input:focus {
+            color: #495057;
+            background-color: #fff;
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        .search-btn {
+            border-radius: 0 4px 4px 0;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #fff;
+            background-color: #1890ff;
+            border: 1px solid #1890ff;
+            cursor: pointer;
+        }
+        
+        .search-btn:hover {
+            background-color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        /* 警告框样式 */
+        .alert {
+            position: relative;
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+        }
+        
+        .alert-info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+        
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+        }
+        
+        .alert-dismissible {
+            padding-right: 3.75rem;
+        }
+        
+        .btn-close {
+            float: right;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #000;
+            text-shadow: 0 1px 0 #fff;
+            opacity: 0.5;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        
+        /* 表单样式 */
+        .form-label {
+            display: inline-block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            display: block;
+            width: 100%;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .form-control:focus {
+            color: #495057;
+            background-color: #fff;
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        /* 布局类 */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+        
+        .justify-content-center {
+            justify-content: center !important;
+        }
+        
+        .col-md-4,
+        .col-md-6 {
+            position: relative;
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+        
+        @media (min-width: 768px) {
+            .col-md-4 {
+                flex: 0 0 33.333333%;
+                max-width: 33.333333%;
+            }
+            .col-md-6 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+        }
+        
+        /* 文本样式 */
+        .text-center {
+            text-align: center !important;
+        }
+        
+        .text-muted {
+            color: #6c757d !important;
+        }
+        
+        .text-primary {
+            color: #1890ff !important;
+        }
+        
+        a.text-primary:hover {
+            color: #40a9ff !important;
+        }
+        
+        /* 边距类 */
+        .mb-4 {
+            margin-bottom: 1.5rem !important;
+        }
+        
+        .mb-6 {
+            margin-bottom: 2.5rem !important;
+        }
+        
+        .mt-4 {
+            margin-top: 1.5rem !important;
+        }
+        
+        /* 宽度类 */
+        .w-100 {
+            width: 100% !important;
+        }
+        
+        /* 按钮主要样式 */
+        .btn-primary {
+            background-color: #1890ff;
+            border-color: #1890ff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+        }
+        
+        .btn-outline-primary {
+            color: #1890ff;
+            background-color: transparent;
+            border-color: #1890ff;
+        }
+        
+        .btn-outline-primary:hover {
+            color: white;
+            background-color: #1890ff;
+            border-color: #1890ff;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+            
+            .content {
+                margin-left: 200px;
+                width: calc(100% - 200px);
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .content {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+        
+        /* 登录/注册表单容器 */
+        .auth-container {
+            max-width: 500px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .auth-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #1890ff;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">LMJ（长征）集团管理平台</a>
+            <div class="ml-auto">
+                <a href="#login" class="btn login-btn">
+                    登录
+                </a>
+                <a href="#register" class="btn register-btn">
+                    注册
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <div class="main-container">
+        <!-- 侧边导航栏 -->
+        <div class="sidebar">
+            <a href="#" class="sidebar-item active">
+                <i class="fas fa-home"></i>
+                <span>首页</span>
+            </a>
+            <a href="#dashboard" class="sidebar-item">
+                <i class="fas fa-plane-departure"></i>
+                <span>活动</span>
+                <i class="fas fa-chevron-right dropdown-icon"></i>
+            </a>
+            <a href="#controllers" class="sidebar-item">
+                <i class="fas fa-users"></i>
+                <span>管制员列表</span>
+            </a>
+            <a href="#huoda" class="sidebar-item">
+                <i class="fas fa-fire"></i>
+                <span>火大</span>
+            </a>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 首页内容 -->
+            <div id="index">
+                <div class="search-bar">
+                    <div style="position: relative; width: 250px;">
+                        <input type="text" class="search-input" placeholder="搜索活动..." style="padding-right: 30px;">
+                        <span class="search-icon" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #6c757d;">
+                            <i class="fas fa-search"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h2>所有活动</h2>
+                </div>
+
+                <div class="row">
+                    <!-- 活动卡片 1 -->
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between items-start mb-3">
+                                    <span class="badge badge-enrolling">报名中</span>
+                                </div>
+                                <h3 class="card-title mb-3">冬季联合飞行活动</h3>
+                                
+                                <div class="flight-info">
+                                    <i class="far fa-clock"></i>
+                                    <span>2023-12-20 14:00 - 17:00</span>
+                                </div>
+                                
+                                <div class="flight-info">
+                                    <i class="fas fa-plane-departure"></i>
+                                    <span>北京-上海航线</span>
+                                </div>
+                                
+                                <div class="mt-4 d-flex justify-content-between">
+                                    <span class="text-muted">15人已报名</span>
+                                    <div>
+                                        <a href="#login" class="btn btn-primary btn-sm">登录报名</a>
+                                        <a href="#flight-details-1" class="btn btn-outline-primary btn-sm ml-2">查看详情</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 活动卡片 2 -->
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between items-start mb-3">
+                                    <span class="badge badge-enrolling">报名中</span>
+                                </div>
+                                <h3 class="card-title mb-3">春季飞行训练</h3>
+                                
+                                <div class="flight-info">
+                                    <i class="far fa-clock"></i>
+                                    <span>2024-03-15 10:00 - 13:00</span>
+                                </div>
+                                
+                                <div class="flight-info">
+                                    <i class="fas fa-plane-departure"></i>
+                                    <span>广州-深圳航线</span>
+                                </div>
+                                
+                                <div class="mt-4 d-flex justify-content-between">
+                                    <span class="text-muted">8人已报名</span>
+                                    <div>
+                                        <a href="#login" class="btn btn-primary btn-sm">登录报名</a>
+                                        <a href="#flight-details-2" class="btn btn-outline-primary btn-sm ml-2">查看详情</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 活动卡片 3 -->
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between items-start mb-3">
+                                    <span class="badge badge-enrolling">报名中</span>
+                                </div>
+                                <h3 class="card-title mb-3">区域管制联合演练</h3>
+                                
+                                <div class="flight-info">
+                                    <i class="far fa-clock"></i>
+                                    <span>2024-04-05 16:00 - 19:00</span>
+                                </div>
+                                
+                                <div class="flight-info">
+                                    <i class="fas fa-plane-departure"></i>
+                                    <span>华东区域</span>
+                                </div>
+                                
+                                <div class="mt-4 d-flex justify-content-between">
+                                    <span class="text-muted">12人已报名</span>
+                                    <div>
+                                        <a href="#login" class="btn btn-primary btn-sm">登录报名</a>
+                                        <a href="#flight-details-3" class="btn btn-outline-primary btn-sm ml-2">查看详情</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分页 -->
+                <div class="pagination">
+                    <nav aria-label="Page navigation example">
+                        <ul class="pagination">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            
+            <!-- 登录页面 -->
+            <div id="login" style="display: none;">
+                <div class="auth-container">
+                    <h2 class="auth-title">用户登录</h2>
+                    <form>
+                        <div class="mb-4">
+                            <label for="login_identifier" class="form-label">用户名或用户ID</label>
+                            <input type="text" class="form-control" id="login_identifier" placeholder="请输入用户名或用户ID">
+                        </div>
+                        <div class="mb-4">
+                            <label for="password" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="password" placeholder="请输入密码">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">登录</button>
+                        <div class="text-center mt-4">
+                            <a href="#register" class="text-primary">还没有账号？立即注册</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 注册页面 -->
+            <div id="register" style="display: none;">
+                <div class="auth-container">
+                    <h2 class="auth-title">用户注册</h2>
+                    <form>
+                        <div class="mb-4">
+                            <label for="username" class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="username" placeholder="请输入用户名（2-20个字符）">
+                        </div>
+                        <div class="mb-4">
+                            <label for="reg_password" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="reg_password" placeholder="请输入密码（6-20位，包含字母和数字）">
+                        </div>
+                        <div class="mb-4">
+                            <label for="confirm_password" class="form-label">确认密码</label>
+                            <input type="password" class="form-control" id="confirm_password" placeholder="请再次输入密码">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">注册</button>
+                        <div class="text-center mt-4">
+                            <a href="#login" class="text-primary">已有账号？立即登录</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 仪表盘页面 -->
+            <div id="dashboard" style="display: none;">
+                <div class="mb-4">
+                    <h2>联飞活动仪表盘</h2>
+                </div>
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle"></i> 请先登录后查看您的活动列表
+                </div>
+                <div class="text-center py-10">
+                    <p class="text-muted">登录后可以查看和管理您的联飞活动</p>
+                    <a href="#login" class="btn btn-primary mt-4">立即登录</a>
+                </div>
+            </div>
+            
+            <!-- 管制员列表页面 -->
+            <div id="controllers" style="display: none;">
+                <div class="mb-4">
+                    <h2>管制员列表</h2>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>管制员ID</th>
+                                    <th>姓名</th>
+                                    <th>管制等级</th>
+                                    <th>管制范围</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>CTR001</td>
+                                    <td>张明</td>
+                                    <td>高级管制员</td>
+                                    <td>北京区域</td>
+                                </tr>
+                                <tr>
+                                    <td>CTR002</td>
+                                    <td>李华</td>
+                                    <td>中级管制员</td>
+                                    <td>上海区域</td>
+                                </tr>
+                                <tr>
+                                    <td>CTR003</td>
+                                    <td>王芳</td>
+                                    <td>初级管制员</td>
+                                    <td>广州区域</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 火大页面 -->
+            <div id="huoda" style="display: none;">
+                <div class="mb-4">
+                    <h2>火大</h2>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <p>火大页面内容尚未加载。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 简单的页面切换功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取所有导航链接
+            const navLinks = document.querySelectorAll('.sidebar-item');
+            
+            // 获取所有内容区域
+            const contentSections = {
+                index: document.getElementById('index'),
+                dashboard: document.getElementById('dashboard'),
+                controllers: document.getElementById('controllers'),
+                huoda: document.getElementById('huoda'),
+                login: document.getElementById('login'),
+                register: document.getElementById('register')
+            };
+            
+            // 添加导航点击事件
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // 隐藏所有内容区域
+                    for (const section in contentSections) {
+                        contentSections[section].style.display = 'none';
+                    }
+                    
+                    // 移除所有导航项的活跃状态
+                    navLinks.forEach(item => item.classList.remove('active'));
+                    
+                    // 显示对应内容区域
+                    const target = this.getAttribute('href').substring(1);
+                    if (contentSections[target]) {
+                        contentSections[target].style.display = 'block';
+                        this.classList.add('active');
+                    }
+                });
+            });
+            
+            // 登录/注册链接点击事件
+            const authLinks = document.querySelectorAll('a[href="#login"], a[href="#register"]');
+            authLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // 隐藏所有内容区域
+                    for (const section in contentSections) {
+                        contentSections[section].style.display = 'none';
+                    }
+                    
+                    // 移除所有导航项的活跃状态
+                    navLinks.forEach(item => item.classList.remove('active'));
+                    
+                    // 显示对应内容区域
+                    const target = this.getAttribute('href').substring(1);
+                    if (contentSections[target]) {
+                        contentSections[target].style.display = 'block';
+                    }
+                });
+            });
+            
+            // 表单提交事件
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // 模拟表单提交成功
+                    const formId = this.parentElement.parentElement.id;
+                    
+                    if (formId === 'login') {
+                        // 隐藏所有内容区域
+                        for (const section in contentSections) {
+                            contentSections[section].style.display = 'none';
+                        }
+                        
+                        // 显示仪表盘
+                        contentSections.dashboard.style.display = 'block';
+                        
+                        // 更新导航栏
+                        navLinks.forEach(item => {
+                            if (item.getAttribute('href') === '#dashboard') {
+                                item.classList.add('active');
+                            } else {
+                                item.classList.remove('active';
+                            }
+                        });
+                        
+                    } else if (formId === 'register') {
+                        // 注册成功后跳转到登录页
+                        for (const section in contentSections) {
+                            contentSections[section].style.display = 'none';
+                        }
+                        contentSections.login.style.display = 'block';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

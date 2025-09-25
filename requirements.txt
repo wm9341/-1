@@ -1,0 +1,14 @@
+flask
+# 基础依赖
+Flask==3.0.3
+
+# 数据库相关
+Flask-SQLAlchemy==3.1.1
+passlib==1.7.4
+Flask-Migrate==4.0.7
+
+# 用户认证
+Flask-Login==0.6.3
+
+# 生产环境WSGI服务器
+gunicorn==22.0.0

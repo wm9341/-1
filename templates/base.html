@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LMJ（长征）集团管理平台{% endblock %}</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 基础重置和通用样式 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* 容器 */
+        .container-fluid {
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            margin-right: auto;
+            margin-left: auto;
+        }
+        
+        .ml-auto {
+            margin-left: auto;
+        }
+        
+        /* 导航栏 */
+        .navbar {
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 1rem;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            min-height: 56px;
+        }
+        
+        .navbar-brand {
+            display: inline-block;
+            padding-top: 0.3125rem;
+            padding-bottom: 0.3125rem;
+            margin-right: 1rem;
+            font-size: 1.25rem;
+            line-height: inherit;
+            white-space: nowrap;
+            color: #1890ff !important;
+            font-weight: bold;
+            font-size: 1.5rem;
+            text-decoration: none;
+        }
+        
+        /* 按钮样式 */
+        .btn {
+            display: inline-block;
+            font-weight: 400;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            user-select: none;
+            border: 1px solid transparent;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            border-radius: 0.25rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .login-btn {
+            color: #666;
+            background-color: white;
+            border: 1px solid #d9d9d9;
+            margin-right: 0.5rem;
+        }
+        
+        .login-btn:hover {
+            color: #1890ff;
+            border-color: #1890ff;
+        }
+        
+        .register-btn {
+            color: white;
+            background-color: #1890ff;
+            border: 1px solid #1890ff;
+        }
+        
+        .register-btn:hover {
+            background-color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .admin-btn {
+            color: white;
+            background-color: #52c41a;
+            border: 1px solid #52c41a;
+            margin-right: 0.5rem;
+        }
+        
+        .admin-btn:hover {
+            background-color: #73d13d;
+            border-color: #73d13d;
+        }
+        
+        /* 主要内容区域 */
+        .main-container {
+            display: flex;
+            min-height: calc(100vh - 56px);
+        }
+        
+        /* 侧边导航栏 */
+        .sidebar {
+            width: 240px;
+            background-color: white;
+            border-right: 1px solid #e8e8e8;
+            padding: 1.5rem 0;
+            position: fixed;
+            height: calc(100vh - 56px);
+            overflow-y: auto;
+        }
+        
+        .sidebar-item {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+        
+        .sidebar-item:hover {
+            background-color: #f0f2f5;
+            color: #1890ff;
+        }
+        
+        .sidebar-item.active {
+            background-color: #e6f7ff;
+            color: #1890ff;
+            border-right: 3px solid #1890ff;
+        }
+        
+        .sidebar-item i {
+            margin-right: 0.75rem;
+        }
+        
+        .sidebar-item .dropdown-icon {
+            margin-left: auto;
+            transition: transform 0.3s;
+        }
+        
+        .sidebar-item.active .dropdown-icon {
+            transform: rotate(90deg);
+        }
+        
+        /* 内容区域 */
+        .content {
+            margin-left: 240px;
+            padding: 1.5rem;
+            width: calc(100% - 240px);
+            min-height: calc(100vh - 56px);
+        }
+        
+        /* 卡片样式 */
+        .card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            word-wrap: break-word;
+            background-color: #fff;
+            background-clip: border-box;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
+            margin-bottom: 1rem;
+        }
+        
+        .card-body {
+            flex: 1 1 auto;
+            min-height: 1px;
+            padding: 1.25rem;
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+        
+        /* 徽章样式 */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 4px;
+        }
+        
+        .badge-enrolling {
+            background-color: #e6f7ff;
+            color: #1890ff;
+        }
+        
+        /* 航班信息样式 */
+        .flight-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            color: #666;
+            font-size: 0.875rem;
+        }
+        
+        .flight-info i {
+            margin-right: 0.5rem;
+            color: #999;
+        }
+        
+        /* 分页样式 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+            padding-left: 0;
+            list-style: none;
+        }
+        
+        .pagination li {
+            margin: 0 5px;
+        }
+        
+        /* 搜索栏样式 */
+        .search-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1.5rem;
+        }
+        
+        .search-input {
+            width: 250px;
+            border-radius: 4px;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .search-input:focus {
+            color: #495057;
+            background-color: #fff;
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        .search-btn {
+            border-radius: 0 4px 4px 0;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #fff;
+            background-color: #1890ff;
+            border: 1px solid #1890ff;
+            cursor: pointer;
+        }
+        
+        .search-btn:hover {
+            background-color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        /* 警告框样式 */
+        .alert {
+            position: relative;
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+        }
+        
+        .alert-info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+        
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+        }
+        
+        .alert-dismissible {
+            padding-right: 3.75rem;
+        }
+        
+        .btn-close {
+            float: right;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #000;
+            text-shadow: 0 1px 0 #fff;
+            opacity: 0.5;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        
+        /* 表单样式 */
+        .form-label {
+            display: inline-block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            display: block;
+            width: 100%;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .form-control:focus {
+            color: #495057;
+            background-color: #fff;
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        /* 布局类 */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+        
+        .justify-content-center {
+            justify-content: center !important;
+        }
+        
+        .col-md-6 {
+            position: relative;
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+        
+        @media (min-width: 768px) {
+            .col-md-6 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+        }
+        
+        /* 文本样式 */
+        .text-center {
+            text-align: center !important;
+        }
+        
+        .text-muted {
+            color: #6c757d !important;
+        }
+        
+        .text-primary {
+            color: #1890ff !important;
+        }
+        
+        a.text-primary:hover {
+            color: #40a9ff !important;
+        }
+        
+        /* 边距类 */
+        .mb-4 {
+            margin-bottom: 1.5rem !important;
+        }
+        
+        .mb-6 {
+            margin-bottom: 2.5rem !important;
+        }
+        
+        .mt-4 {
+            margin-top: 1.5rem !important;
+        }
+        
+        /* 宽度类 */
+        .w-100 {
+            width: 100% !important;
+        }
+        
+        /* 按钮主要样式 */
+        .btn-primary {
+            background-color: #1890ff;
+            border-color: #1890ff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        /* 图标样式 - 简单模拟Font Awesome */
+        .icon::before {
+            display: inline-block;
+            font-style: normal;
+            font-variant: normal;
+            text-rendering: auto;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* 简单的图标模拟 */
+        .fas.fa-home::before { content: "🏠"; margin-right: 8px; }
+        .fas.fa-plane-departure::before { content: "✈️"; margin-right: 8px; }
+        .fas.fa-user::before { content: "👤"; margin-right: 8px; }
+        .fas.fa-users::before { content: "👥"; margin-right: 8px; }
+        .fas.fa-download::before { content: "📥"; margin-right: 8px; }
+        .fas.fa-clock::before { content: "🕒"; margin-right: 8px; }
+        .fas.fa-map-marker-alt::before { content: "📍"; margin-right: 8px; }
+        .fas.fa-chevron-right::before { content: "▶️"; }
+        .fas.fa-search::before { content: "🔍"; }
+        
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: rgba(0,0,0,0.02);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            /* 平板设备优化 */
+            .sidebar {
+                width: 220px;
+            }
+            
+            .content {
+                margin-left: 220px;
+                width: calc(100% - 220px);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            /* 小平板和手机设备优化 */
+            .content {
+                margin-left: 0;
+                width: 100%;
+                padding: 1rem;
+            }
+            
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+            
+            .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+            
+            .card {
+                margin-bottom: 0.8rem;
+            }
+            
+            /* 优化表格在小屏幕上的显示 */
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            /* 小型手机设备优化 */
+            .navbar {
+                padding: 0.5rem;
+            }
+            
+            .content {
+                padding: 0.8rem;
+            }
+            
+            .btn {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.9rem;
+            }
+            
+            .form-control {
+                padding: 0.6rem;
+                font-size: 16px; /* 防止iOS自动放大 */
+            }
+            
+            .card-body {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">LMJ（长征）集团管理平台</a>
+            <div class="ml-auto">
+                {% if current_user.is_authenticated %}
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn admin-btn">
+                            管理后台
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}" class="btn login-btn">
+                        登出
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="btn login-btn">
+                        登录
+                    </a>
+                    <a href="{{ url_for('register') }}" class="btn register-btn">
+                        注册
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <div class="main-container">
+        <!-- 侧边导航栏 -->
+        <div class="sidebar">
+            <a href="{{ url_for('index') }}" class="sidebar-item {{ 'active' if request.endpoint == 'index' else '' }}">
+                <i class="fas fa-home"></i>
+                <span>首页</span>
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="sidebar-item {{ 'active' if request.endpoint == 'dashboard' else '' }}">
+                <i class="fas fa-plane-departure"></i>
+                <span>活动</span>
+                <i class="fas fa-chevron-right dropdown-icon"></i>
+            </a>
+            <a href="{{ url_for('controllers_list') }}" class="sidebar-item {{ 'active' if request.endpoint == 'controllers_list' else '' }}">
+                <i class="fas fa-users"></i>
+                <span>管制员列表</span>
+            </a>
+            <a href="{{ url_for('huoda') }}" class="sidebar-item {{ 'active' if request.endpoint == 'huoda' else '' }}">
+                <i class="fas fa-fire"></i>
+                <span>火大</span>
+            </a>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 显示消息 -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show mb-4" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- 内容块 -->
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+
+    <!-- 移动端响应式支持 -->
+    <script src="{{ url_for('static', filename='mobile-responsive.js') }}"></script>
+
+</body>
+</html>

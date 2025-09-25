@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户注册 - LMJ（长征）集团管理平台</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 基础重置和通用样式 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        
+        /* 容器 */
+        .container-fluid {
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            margin-right: auto;
+            margin-left: auto;
+        }
+        
+        /* 卡片样式 */
+        .card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            word-wrap: break-word;
+            background-color: #fff;
+            background-clip: border-box;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
+            margin-bottom: 1rem;
+        }
+        
+        .card-body {
+            flex: 1 1 auto;
+            min-height: 1px;
+            padding: 1.25rem;
+        }
+        
+        /* 按钮样式 */
+        .btn {
+            display: inline-block;
+            font-weight: 400;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            user-select: none;
+            border: 1px solid transparent;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            border-radius: 0.25rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        /* 按钮主要样式 */
+        .btn-primary {
+            background-color: #1890ff;
+            border-color: #1890ff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        /* 表单样式 */
+        .form-control {
+            display: block;
+            width: 100%;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .form-control:focus {
+            color: #495057;
+            background-color: #fff;
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        .form-label {
+            display: inline-block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        /* 文本类 */
+        .text-center {
+            text-align: center !important;
+        }
+        
+        .text-muted {
+            color: #6c757d !important;
+        }
+        
+        .text-primary {
+            color: #1890ff !important;
+        }
+        
+        a.text-primary:hover {
+            color: #40a9ff !important;
+        }
+        
+        /* 边距类 */
+        .mb-4 {
+            margin-bottom: 1.5rem !important;
+        }
+        
+        .mb-6 {
+            margin-bottom: 2.5rem !important;
+        }
+        
+        .mt-4 {
+            margin-top: 1.5rem !important;
+        }
+        
+        /* 宽度类 */
+        .w-100 {
+            width: 100% !important;
+        }
+        
+        /* 行和列 */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+        
+        .col-md-6 {
+            position: relative;
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+        
+        .justify-content-center {
+            justify-content: center !important;
+        }
+        
+        /* 警告框样式 */
+        .alert {
+            position: relative;
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .col-md-6 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+        }
+        
+        /* 辅助文本 */
+        .form-text {
+            display: block;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="text-center mb-6">
+                            <h2 class="h3">用户注册</h2>
+                            <p class="text-muted">创建账号以参与联飞活动</p>
+                        </div>
+                        
+                        <!-- 显示消息 -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category if category != 'message' else 'info' }}" role="alert">
+                                        {{ message }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                        
+                        <form method="POST" action="{{ url_for('register') }}">
+                            <div class="mb-4">
+                                <label for="username" class="form-label">用户名</label>
+                                <input type="text" class="form-control" id="username" name="username" required placeholder="请设置用户名">
+                                <small class="form-text text-muted">用户名必须至少3个字符，可包含中文和英文</small>
+                            </div>
+                            <div class="mb-4">
+                                <label for="password" class="form-label">密码</label>
+                                <input type="password" class="form-control" id="password" name="password" required placeholder="请设置密码">
+                                <small class="form-text text-muted">密码必须至少6个字符，且必须包含至少一个字母和一个数字</small>
+                            </div>
+                            <div class="mb-6">
+                                <label for="confirm_password" class="form-label">确认密码</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required placeholder="请再次输入密码">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">注册</button>
+                        </form>
+                        <div class="text-center mt-4">
+                            <p>已有账号？<a href="{{ url_for('login') }}" class="text-primary">立即登录</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

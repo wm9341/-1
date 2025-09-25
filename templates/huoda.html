@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}火大系统 - LMJ（长征）集团管理平台{% endblock %}
+
+{% block content %}
+    <div class="card mb-6">
+        <div class="card-body">
+            <h1 class="h3 mb-4">火大系统</h1>
+            <p class="text-muted">这里是火大系统的主页面，用于管理和监控联飞活动中的相关数据。</p>
+        </div>
+    </div>
+
+    <div class="row gap-6">
+        <!-- 统计卡片 -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="mb-3">系统概览</h3>
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="p-4 bg-light rounded">
+                                <h4 class="text-primary">活跃用户</h4>
+                                <p class="text-2xl font-bold">{{ active_users_count or 0 }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="p-4 bg-light rounded">
+                                <h4 class="text-primary">当前联飞</h4>
+                                <p class="text-2xl font-bold">{{ active_flights_count or 0 }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 日志或其他信息 -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="mb-3">系统日志</h3>
+                    <div class="overflow-auto" style="max-height: 200px;">
+                        {% if logs %}
+                            {% for log in logs %}
+                                <p class="text-sm mb-1">{{ log.timestamp }} - {{ log.message }}</p>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center">暂无日志信息</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详细数据展示区域 -->
+    <div class="card mt-6">
+        <div class="card-body">
+            <h3 class="mb-3">详细数据</h3>
+            <p class="text-muted">这里将显示火大系统的详细数据和分析结果。</p>
+        </div>
+    </div>
+{% endblock %}

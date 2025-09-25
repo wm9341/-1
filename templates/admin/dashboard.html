@@ -1,0 +1,91 @@
+{% extends "admin/admin_base.html" %}
+
+{% block page_title %}仪表盘{% endblock %}
+
+{% block admin_content %}
+<div class="admin-stats">
+    <div class="admin-stat-cards">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3>用户总数</h3>
+            </div>
+            <div class="admin-card-body">
+                <span class="admin-stat-value">{{ total_users }}</span>
+            </div>
+        </div>
+        
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3>联飞活动总数</h3>
+            </div>
+            <div class="admin-card-body">
+                <span class="admin-stat-value">{{ total_events }}</span>
+            </div>
+        </div>
+        
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3>参与者总数</h3>
+            </div>
+            <div class="admin-card-body">
+                <span class="admin-stat-value">{{ total_participants }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="admin-recent-activity">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3>系统概览</h3>
+            </div>
+            <div class="admin-card-body">
+                <p>欢迎使用LMJ（长征）集团管理平台后台管理系统。通过此平台，您可以管理用户、联飞活动和查看系统统计信息。</p>
+                <div class="admin-quick-links">
+                    <a href="{{ url_for('admin_users') }}" class="admin-btn admin-btn-primary">管理用户</a>
+                    <a href="{{ url_for('admin_flight_events') }}" class="admin-btn admin-btn-primary">管理联飞活动</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 统计卡片样式 */
+    .admin-stats {
+        display: grid;
+        gap: 1.5rem;
+    }
+    
+    .admin-stat-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .admin-card-header {
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .admin-card-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #6b7280;
+    }
+    
+    .admin-stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #111827;
+    }
+    
+    /* 快速链接样式 */
+    .admin-quick-links {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+</style>
+{% endblock %}

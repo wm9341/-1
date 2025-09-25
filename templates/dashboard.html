@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}仪表盘 - LMJ（长征）集团管理平台{% endblock %}
+
+{% block content %}
+    <div class="card mb-6">
+        <div class="card-body">
+            <h1 class="h3 mb-2">欢迎回来，{{ current_user.username }}！</h1>
+            <p class="text-muted">这是您的个人仪表盘，您可以在这里查看和管理您的联飞活动。</p>
+            <p class="text-muted">您的用户ID：<strong>{{ current_user.id }}</strong></p>
+        </div>
+    </div>
+
+    <div class="row gap-6">
+        <!-- 可用联飞活动 -->
+        <div class="col-md-6">
+            <div class="mb-6">
+                <h2>可用联飞活动</h2>
+                <div class="row mt-4">
+                    {% if events %}
+                        {% for event in events %}
+                            <div class="col-md-12 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between items-start mb-3">
+                                            <span class="badge badge-enrolling">报名中</span>
+                                        </div>
+                                        <h3 class="card-title mb-3">{{ event.name }}</h3>
+                                         
+                                        <div class="flight-info">
+                                            <i class="far fa-clock"></i>
+                                            <span>创建于: {{ event.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                        </div>
+                                         
+                                        <div class="mt-4">
+                                            <a href="{{ url_for('join_flight', event_id=event.id) }}" class="btn btn-primary btn-sm">报名参加</a>
+                                            <a href="{{ url_for('flight_details', event_id=event.id) }}" class="btn btn-outline-primary btn-sm ml-2">查看详情</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-8 bg-gray-50 rounded-lg col-md-12">
+                            <p class="text-muted">暂无可用的联飞活动</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 已报名联飞活动 -->
+        <div class="col-md-6">
+            <div class="mb-6">
+                <h2>已报名联飞活动</h2>
+                <div class="row mt-4">
+                    {% if participations %}
+                        {% for participation in participations %}
+                            <div class="col-md-12 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between items-start mb-3">
+                                            <span class="badge badge-enrolling">已报名</span>
+                                        </div>
+                                        <h3 class="card-title mb-3">{{ participation.flight_event.name }}</h3>
+                                         
+                                        <div class="flight-info">
+                                            <i class="fas fa-user"></i>
+                                            <span><strong>飞行员姓名:</strong> {{ participation.pilot_name }}</span>
+                                        </div>
+                                         
+                                        <div class="flight-info">
+                                            <i class="fas fa-plane"></i>
+                                            <span><strong>航班号:</strong> {{ participation.flight_number }}</span>
+                                        </div>
+                                         
+                                        <div class="flight-info">
+                                            <i class="fas fa-space-shuttle"></i>
+                                            <span><strong>机型:</strong> {{ participation.aircraft_type }}</span>
+                                        </div>
+                                         
+                                        <div class="flight-info">
+                                            <i class="far fa-calendar-check"></i>
+                                            <span>报名时间: {{ participation.registered_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                        </div>
+                                         
+                                        <div class="mt-4">
+                                            <a href="{{ url_for('flight_details', event_id=participation.flight_event.id) }}" class="btn btn-primary btn-sm">查看活动详情</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-8 bg-gray-50 rounded-lg col-md-12">
+                            <p class="text-muted">您还没有报名任何联飞活动</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
