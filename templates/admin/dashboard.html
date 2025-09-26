@@ -10,25 +10,23 @@
                 <h3>用户总数</h3>
             </div>
             <div class="admin-card-body">
-                <span class="admin-stat-value">{{ total_users }}</span>
+                <span class="admin-stat-value">{{ user_count }}</span>
             </div>
         </div>
-        
         <div class="admin-card">
             <div class="admin-card-header">
-                <h3>联飞活动总数</h3>
+                <h3>活动数量</h3>
             </div>
             <div class="admin-card-body">
-                <span class="admin-stat-value">{{ total_events }}</span>
+                <span class="admin-stat-value">{{ event_count }}</span>
             </div>
         </div>
-        
         <div class="admin-card">
             <div class="admin-card-header">
-                <h3>参与者总数</h3>
+                <h3>已报名人数</h3>
             </div>
             <div class="admin-card-body">
-                <span class="admin-stat-value">{{ total_participants }}</span>
+                <span class="admin-stat-value">{{ participant_count }}</span>
             </div>
         </div>
     </div>
@@ -39,10 +37,10 @@
                 <h3>系统概览</h3>
             </div>
             <div class="admin-card-body">
-                <p>欢迎使用LMJ（长征）集团管理平台后台管理系统。通过此平台，您可以管理用户、联飞活动和查看系统统计信息。</p>
+                <p>欢迎使用LMJ（长征）集团管理平台后台管理系统。通过此平台，您可以管理用户、活动和查看系统统计信息。</p>
                 <div class="admin-quick-links">
                     <a href="{{ url_for('admin_users') }}" class="admin-btn admin-btn-primary">管理用户</a>
-                    <a href="{{ url_for('admin_flight_events') }}" class="admin-btn admin-btn-primary">管理联飞活动</a>
+                    <a href="{{ url_for('admin_flight_events') }}" class="admin-btn admin-btn-secondary">活动管理</a>
                 </div>
             </div>
         </div>

@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}投诉 - LMJ（长征）集团管理平台{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">投诉</h2>
+    
+    <!-- 提交投诉表单 -->
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title mb-4">提交投诉</h3>
+            {% if current_user.is_authenticated %}
+                <form method="POST">
+                    <div class="mb-4">
+                        <label for="title" class="form-label">投诉标题</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="complaint_type" class="form-label">投诉对象类型</label>
+                        <select class="form-control" id="complaint_type" name="complaint_type" onchange="showTargetOptions()" required>
+                            <option value="">请选择投诉对象类型</option>
+                            <option value="group_member">集团内部成员</option>
+                            <option value="airline_chairman">航司董事长</option>
+                            <option value="airline_member">航司成员</option>
+                        </select>
+                    </div>
+                    
+                    <!-- 集团内部成员选项 -->
+                    <div id="group_member_options" class="mb-4" style="display: none;">
+                        <label for="group_member" class="form-label">选择集团内部成员</label>
+                        <select class="form-control" id="group_member" name="group_member">
+                            <option value="">请选择集团内部成员</option>
+                            <option value="无名(2122927071)">无名（2122927071）最高负责人</option>
+                            <option value="红苕稀饭(3088276955)">红苕稀饭（3088276955）集团董事长</option>
+                            <option value="逗比(3645592257)">逗比（3645592257）集团副董事长</option>
+                            <option value="ℒ.🌀(2270623277)">ℒ.🌀（2270623277）CEO</option>
+                            <option value="墨卿尘(2456669766)">墨卿尘（2456669766）CTO</option>
+                        </select>
+                    </div>
+                    
+                    <!-- 航司董事长选项 -->
+                    <div id="airline_chairman_options" class="mb-4" style="display: none;">
+                        <label for="airline_chairman" class="form-label">选择航司董事长</label>
+                        <select class="form-control" id="airline_chairman" name="airline_chairman">
+                            <option value="">请选择航司董事长</option>
+                            <option value="艾(3838925451)">艾（3838925451）北方航空董事长</option>
+                            <option value="爱琪是我的事(1507290776)">爱琪是我的事（1507290776）厦门航空董事长</option>
+                            <option value="许如清(1626618258)">许如清（1626618258）东方航空董事长</option>
+                            <option value=".(1461731945)"> .（1461731945）上海航空董事长</option>
+                        </select>
+                    </div>
+                    
+                    <!-- 航司成员输入 -->
+                    <div id="airline_member_options" class="mb-4" style="display: none;">
+                        <label class="form-label">航司成员信息</label>
+                        <div class="mb-3">
+                            <label for="airline_member_name" class="form-label">姓名</label>
+                            <input type="text" class="form-control" id="airline_member_name" name="airline_member_name" placeholder="请输入航司成员姓名">
+                        </div>
+                        <div>
+                            <label for="airline_member_qq" class="form-label">QQ号</label>
+                            <input type="text" class="form-control" id="airline_member_qq" name="airline_member_qq" placeholder="请输入航司成员QQ号">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="content" class="form-label">投诉内容</label>
+                        <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">提交投诉</button>
+                </form>
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i> 请先<a href="{{ url_for('login') }}">登录</a>后再提交投诉。
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function showTargetOptions() {
+    // 隐藏所有选项
+    document.getElementById('group_member_options').style.display = 'none';
+    document.getElementById('airline_chairman_options').style.display = 'none';
+    document.getElementById('airline_member_options').style.display = 'none';
+    
+    // 获取选中的投诉对象类型
+    var complaintType = document.getElementById('complaint_type').value;
+    
+    // 根据选择显示对应的选项
+    if (complaintType === 'group_member') {
+        document.getElementById('group_member_options').style.display = 'block';
+    } else if (complaintType === 'airline_chairman') {
+        document.getElementById('airline_chairman_options').style.display = 'block';
+    } else if (complaintType === 'airline_member') {
+        document.getElementById('airline_member_options').style.display = 'block';
+    }
+}
+</script>
+{% endblock %}

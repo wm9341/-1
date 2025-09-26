@@ -1,0 +1,179 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block page_title %}投诉管理{% endblock %}
+
+{% block admin_content %}
+<div class="admin-complaints">
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3>投诉列表</h3>
+        </div>
+        <div class="admin-card-body">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>标题</th>
+                        <th>投诉对象</th>
+                        <th>提交人</th>
+                        <th>提交时间</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for complaint in complaints %}
+                    <tr>
+                        <td>{{ complaint.id }}</td>
+                        <td>{{ complaint.title }}</td>
+                        <td>
+                            {% if complaint.complaint_type and complaint.target_name %}
+                                {% if complaint.complaint_type == 'group_member' %}
+                                集团内部成员: {{ complaint.target_name }}
+                                {% elif complaint.complaint_type == 'airline_chairman' %}
+                                航司董事长: {{ complaint.target_name }}
+                                {% elif complaint.complaint_type == 'airline_member' %}
+                                航司成员: {{ complaint.target_name }} {% if complaint.target_qq %}({{ complaint.target_qq }}){% endif %}
+                                {% else %}
+                                {{ complaint.target_name }}
+                                {% endif %}
+                            {% else %}
+                            无
+                            {% endif %}
+                        </td>
+                        <td>{{ complaint.user.username if complaint.user else '未知用户' }}</td>
+                        <td>{{ complaint.created_at.strftime('%Y-%m-%d %H:%M:%S') if complaint.created_at else 'N/A' }}</td>
+                        <td>
+                            {% if complaint.status == 'pending' %}
+                            <span class="admin-badge admin-badge-yellow">待处理</span>
+                            {% elif complaint.status == 'processing' %}
+                            <span class="admin-badge admin-badge-blue">处理中</span>
+                            {% elif complaint.status == 'resolved' %}
+                            <span class="admin-badge admin-badge-green">已解决</span>
+                            {% else %}
+                            <span class="admin-badge admin-badge-gray">{{ complaint.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="admin-btn-group">
+                                <button class="admin-btn admin-btn-primary admin-btn-sm" data-toggle="modal" data-target="#viewComplaintModal" data-id="{{ complaint.id }}" data-title="{{ complaint.title }}" data-content="{{ complaint.content }}" data-status="{{ complaint.status }}" data-complaint_type="{{ complaint.complaint_type }}" data-target_name="{{ complaint.target_name }}" data-target_qq="{{ complaint.target_qq }}">
+                                    查看
+                                </button>
+                                <form action="{{ url_for('admin_complaints_update_status', complaint_id=complaint.id, status='resolved') }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="admin-btn admin-btn-success admin-btn-sm">
+                                        标记为已解决
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if complaints|length == 0 %}
+                    <tr>
+                        <td colspan="7" class="text-center">暂无投诉数据</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 查看投诉模态框 -->
+<div id="viewComplaintModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content" style="background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 70%; max-width: 800px; border-radius: 8px;">
+        <div class="modal-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="modalComplaintTitle"></h2>
+            <button type="button" class="close-modal" style="background: none; border: none; font-size: 28px; cursor: pointer;">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>投诉对象：</label>
+                <div id="modalComplaintTarget"></div>
+            </div>
+            <div class="form-group">
+                <label>投诉内容：</label>
+                <div id="modalComplaintContent" style="white-space: pre-wrap;"></div>
+            </div>
+            <div class="form-group">
+                <label>当前状态：</label>
+                <span id="modalComplaintStatus"></span>
+            </div>
+        </div>
+        <div class="modal-footer" style="margin-top: 20px; text-align: right;">
+            <button type="button" class="admin-btn admin-btn-secondary close-modal">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// 模态框控制
+var viewComplaintModal = document.getElementById('viewComplaintModal');
+var closeModalBtns = document.getElementsByClassName('close-modal');
+var viewButtons = document.querySelectorAll('[data-target="#viewComplaintModal"]');
+
+// 点击查看按钮显示模态框
+viewButtons.forEach(function(button) {
+    button.addEventListener('click', function() {
+        var id = this.getAttribute('data-id');
+        var title = this.getAttribute('data-title');
+        var content = this.getAttribute('data-content');
+        var status = this.getAttribute('data-status');
+        var complaintType = this.getAttribute('data-complaint_type');
+        var targetName = this.getAttribute('data-target_name');
+        var targetQQ = this.getAttribute('data-target_qq');
+        
+        document.getElementById('modalComplaintTitle').textContent = '投诉 #' + id + ': ' + title;
+        
+        // 设置投诉对象信息
+        var targetElement = document.getElementById('modalComplaintTarget');
+        if (complaintType && targetName) {
+            var targetHtml = '';
+            if (complaintType == 'group_member') {
+                targetHtml = '集团内部成员: ' + targetName + (targetQQ ? ' (' + targetQQ + ')' : '');
+            } else if (complaintType == 'airline_chairman') {
+                targetHtml = '航司董事长: ' + targetName + (targetQQ ? ' (' + targetQQ + ')' : '');
+            } else if (complaintType == 'airline_member') {
+                targetHtml = '航司成员: ' + targetName + (targetQQ ? ' (' + targetQQ + ')' : '');
+            } else {
+                targetHtml = targetName + (targetQQ ? ' (' + targetQQ + ')' : '');
+            }
+            targetElement.textContent = targetHtml;
+        } else {
+            targetElement.textContent = '无';
+        }
+        
+        document.getElementById('modalComplaintContent').textContent = content;
+        
+        // 设置状态标签
+        var statusElement = document.getElementById('modalComplaintStatus');
+        if (status == 'pending') {
+            statusElement.innerHTML = '<span class="admin-badge admin-badge-yellow">待处理</span>';
+        } else if (status == 'processing') {
+            statusElement.innerHTML = '<span class="admin-badge admin-badge-blue">处理中</span>';
+        } else if (status == 'resolved') {
+            statusElement.innerHTML = '<span class="admin-badge admin-badge-green">已解决</span>';
+        } else {
+            statusElement.innerHTML = '<span class="admin-badge admin-badge-gray">' + status + '</span>';
+        }
+        
+        viewComplaintModal.style.display = 'block';
+    });
+});
+
+// 关闭模态框
+Array.from(closeModalBtns).forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        viewComplaintModal.style.display = 'none';
+    });
+});
+
+// 点击模态框外部关闭
+window.addEventListener('click', function(event) {
+    if (event.target == viewComplaintModal) {
+        viewComplaintModal.style.display = 'none';
+    }
+});
+</script>
+
+{% endblock %}

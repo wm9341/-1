@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+{% block title %}流程审批详情 - 管理平台{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="page-header">
+                <h1>流程审批详情</h1>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">流程审批 #{{ approval.id }}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>审批类型</label>
+                                <div class="form-control-plaintext">
+                                    {% if approval.approval_type == 'airline_application' %}航司申请
+                                    {% elif approval.approval_type == 'employment_application' %}入职申请
+                                    {% else %}其他
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>当前状态</label>
+                                <div class="form-control-plaintext">
+                                    {% if approval.status == 'pending' %}
+                                    <span class="badge badge-warning">待审批</span>
+                                    {% elif approval.status == 'admin_pending' %}
+                                    <span class="badge badge-primary">等待管理员审批</span>
+                                    {% elif approval.status == 'co_owner_pending' %}
+                                    <span class="badge badge-secondary">等待副主审批</span>
+                                    {% elif approval.status == 'owner_pending' %}
+                                    <span class="badge badge-info">等待主人最终审批</span>
+                                    {% elif approval.status == 'approved' %}
+                                    <span class="badge badge-success">已批准</span>
+                                    {% elif approval.status == 'rejected' %}
+                                    <span class="badge badge-danger">已拒绝</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>审批内容</label>
+                        <div class="form-control-plaintext" style="white-space: pre-wrap;">{{ approval.content }}</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>QQ号</label>
+                        <div class="form-control-plaintext">{{ approval.qq_number if approval.qq_number else '未提供' }}</div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>申请人</label>
+                                <div class="form-control-plaintext">{{ user.username if user else '未知用户' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>提交时间</label>
+                                <div class="form-control-plaintext">{{ approval.created_at }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if approval.status != 'pending' %}
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>处理人</label>
+                                <div class="form-control-plaintext">{{ approved_user.username if approved_user else '系统' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>处理时间</label>
+                                <div class="form-control-plaintext">{{ approval.updated_at }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- 多级审批进度 -->
+                    <div class="mt-4">
+                        <h4>审批进度</h4>
+                        <div class="progress">
+                            {% if approval.status == 'approved' %}
+                            <div class="progress-bar progress-bar-success" style="width: 100%">审批完成</div>
+                            {% elif approval.status == 'rejected' %}
+                            <div class="progress-bar progress-bar-danger" style="width: 100%">已拒绝</div>
+                            {% elif approval.status == 'owner_pending' %}
+                            <div class="progress-bar progress-bar-info" style="width: 75%">等待主人审批</div>
+                            {% elif approval.status == 'co_owner_pending' %}
+                            <div class="progress-bar progress-bar-secondary" style="width: 50%">等待副主审批</div>
+                            {% elif approval.status == 'admin_pending' %}
+                            <div class="progress-bar progress-bar-primary" style="width: 25%">等待管理员审批</div>
+                            {% else %}
+                            <div class="progress-bar progress-bar-warning" style="width: 10%">待处理</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- 审批历史 -->
+                    {% if approval.admin_approvals or approval.co_owner_approvals %}
+                    <div class="mt-4">
+                        <h4>审批历史</h4>
+                        <div class="border rounded p-3">
+                            {% if approval.admin_approvals %}
+                            <div class="mb-2">
+                                <strong>管理员审批:</strong>
+                                <div>{{ approval.admin_approved_count }}/{{ all_admins_count }} 已同意</div>
+                            </div>
+                            {% endif %}
+                            {% if approval.co_owner_approvals %}
+                            <div class="mb-2">
+                                <strong>副主审批:</strong>
+                                <div>{{ approval.co_owner_approved_count }}/{{ all_co_owners_count }} 已同意</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- 审批流程图 -->
+                    <div class="mt-6">
+                        <h4>审批流程图</h4>
+                        <div class="border rounded p-4 bg-light">
+                            <div id="approval-flow-chart" class="approval-flow-chart">
+                                <!-- 流程图将通过JavaScript动态生成 -->
+                                <div class="flow-step">
+                                    <div class="flow-step-title">申请人提交</div>
+                                    <div class="flow-icon flow-icon-completed">✓</div>
+                                    <div class="flow-info">{{ user.username if user else '未知用户' }}</div>
+                                </div>
+                                
+                                <div class="flow-arrow"></div>
+                                
+                                <div class="flow-step">
+                                    <div class="flow-step-title">管理员审批</div>
+                                    <div class="flow-icon" id="admin-icon">{{ approval.admin_approved_count }}/{{ all_admins_count }}</div>
+                                    <div id="admin-details" class="flow-details"></div>
+                                </div>
+                                
+                                <div class="flow-arrow"></div>
+                                
+                                <div class="flow-step">
+                                    <div class="flow-step-title">副主审批</div>
+                                    <div class="flow-icon" id="co-owner-icon">{{ approval.co_owner_approved_count }}/{{ all_co_owners_count }}</div>
+                                    <div id="co-owner-details" class="flow-details"></div>
+                                </div>
+                                
+                                <div class="flow-arrow"></div>
+                                
+                                <div class="flow-step">
+                                    <div class="flow-step-title">主人最终审批</div>
+                                    <div class="flow-icon" id="owner-icon">
+                                        {% if approval.status == 'approved' %}✓
+                                        {% elif approval.status == 'rejected' %}✗
+                                        {% else %}-{% endif %}
+                                    </div>
+                                    <div class="flow-info">
+                                        {% if approval.status == 'approved' or approval.status == 'rejected' %}
+                                            {{ approved_user.username if approved_user else '系统' }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <script>
+                        // 审批流程图初始化
+                        document.addEventListener('DOMContentLoaded', function() {
+                            // 获取审批数据
+                            const adminApprovals = {{ approval.admin_approvals | tojson | safe }} || '{}';
+                            const coOwnerApprovals = {{ approval.co_owner_approvals | tojson | safe }} || '{}';
+                            const usersData = {{ users | tojson | safe }} || {};
+                            
+                            // 解析JSON数据
+                            const adminData = typeof adminApprovals === 'string' ? JSON.parse(adminApprovals) : adminApprovals;
+                            const coOwnerData = typeof coOwnerApprovals === 'string' ? JSON.parse(coOwnerApprovals) : coOwnerApprovals;
+                            
+                            // 更新管理员审批详情
+                            const adminDetailsElement = document.getElementById('admin-details');
+                            if (Object.keys(adminData).length > 0) {
+                                const adminList = document.createElement('div');
+                                adminList.className = 'approval-list';
+                                
+                                Object.entries(adminData).forEach(([userId, status]) => {
+                                    const user = usersData[userId];
+                                    const userItem = document.createElement('div');
+                                    userItem.className = 'approval-item';
+                                    userItem.innerHTML = `
+                                        <span class="approval-user">${user ? user.username : '未知用户'}</span>
+                                        <span class="approval-status approval-${status}">${status === 'approved' ? '已同意' : '已拒绝'}</span>
+                                    `;
+                                    adminList.appendChild(userItem);
+                                });
+                                
+                                adminDetailsElement.appendChild(adminList);
+                            } else {
+                                adminDetailsElement.innerHTML = '<div class="no-data">暂无审批记录</div>';
+                            }
+                            
+                            // 更新副主审批详情
+                            const coOwnerDetailsElement = document.getElementById('co-owner-details');
+                            if (Object.keys(coOwnerData).length > 0) {
+                                const coOwnerList = document.createElement('div');
+                                coOwnerList.className = 'approval-list';
+                                
+                                Object.entries(coOwnerData).forEach(([userId, status]) => {
+                                    const user = usersData[userId];
+                                    const userItem = document.createElement('div');
+                                    userItem.className = 'approval-item';
+                                    userItem.innerHTML = `
+                                        <span class="approval-user">${user ? user.username : '未知用户'}</span>
+                                        <span class="approval-status approval-${status}">${status === 'approved' ? '已同意' : '已拒绝'}</span>
+                                    `;
+                                    coOwnerList.appendChild(userItem);
+                                });
+                                
+                                coOwnerDetailsElement.appendChild(coOwnerList);
+                            } else {
+                                coOwnerDetailsElement.innerHTML = '<div class="no-data">暂无审批记录</div>';
+                            }
+                            
+                            // 更新图标状态
+                            const adminIcon = document.getElementById('admin-icon');
+                            const coOwnerIcon = document.getElementById('co-owner-icon');
+                            const ownerIcon = document.getElementById('owner-icon');
+                            
+                            // 管理员图标状态
+                            {% if approval.status == 'admin_pending' %}
+                                adminIcon.className = 'flow-icon flow-icon-pending';
+                            {% elif approval.status == 'co_owner_pending' or approval.status == 'owner_pending' or approval.status == 'approved' %}
+                                adminIcon.className = 'flow-icon flow-icon-completed';
+                            {% endif %}
+                            
+                            // 副主图标状态
+                            {% if approval.status == 'co_owner_pending' %}
+                                coOwnerIcon.className = 'flow-icon flow-icon-pending';
+                            {% elif approval.status == 'owner_pending' or approval.status == 'approved' %}
+                                coOwnerIcon.className = 'flow-icon flow-icon-completed';
+                            {% endif %}
+                            
+                            // 主人图标状态
+                            {% if approval.status == 'approved' %}
+                                ownerIcon.className = 'flow-icon flow-icon-completed';
+                            {% elif approval.status == 'rejected' %}
+                                ownerIcon.className = 'flow-icon flow-icon-rejected';
+                            {% endif %}
+                        });
+                    </script>
+                    
+                    <style>
+                        /* 审批流程图样式 */
+                        .approval-flow-chart {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            flex-wrap: wrap;
+                            margin: 20px 0;
+                        }
+                        
+                        .flow-step {
+                            flex: 1;
+                            min-width: 150px;
+                            text-align: center;
+                            position: relative;
+                        }
+                        
+                        .flow-step-title {
+                            font-weight: bold;
+                            margin-bottom: 10px;
+                            color: #333;
+                        }
+                        
+                        .flow-icon {
+                            width: 60px;
+                            height: 60px;
+                            border-radius: 50%;
+                            background-color: #e9ecef;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            margin: 0 auto 10px;
+                            font-size: 20px;
+                            font-weight: bold;
+                            color: #666;
+                        }
+                        
+                        .flow-icon-completed {
+                            background-color: #28a745;
+                            color: white;
+                        }
+                        
+                        .flow-icon-pending {
+                            background-color: #ffc107;
+                            color: #333;
+                        }
+                        
+                        .flow-icon-rejected {
+                            background-color: #dc3545;
+                            color: white;
+                        }
+                        
+                        .flow-info {
+                            font-size: 14px;
+                            color: #666;
+                        }
+                        
+                        .flow-arrow {
+                            width: 40px;
+                            height: 2px;
+                            background-color: #ddd;
+                            position: relative;
+                            margin: 0 5px;
+                        }
+                        
+                        .flow-arrow::after {
+                            content: '▶';
+                            position: absolute;
+                            right: -10px;
+                            top: -8px;
+                            color: #ddd;
+                        }
+                        
+                        .flow-details {
+                            margin-top: 10px;
+                            font-size: 13px;
+                        }
+                        
+                        .approval-list {
+                            margin-top: 5px;
+                        }
+                        
+                        .approval-item {
+                            display: flex;
+                            justify-content: space-between;
+                            margin: 3px 0;
+                            padding: 2px 5px;
+                            background-color: #f8f9fa;
+                            border-radius: 3px;
+                        }
+                        
+                        .approval-user {
+                            color: #333;
+                        }
+                        
+                        .approval-status {
+                            font-weight: bold;
+                        }
+                        
+                        .approval-approved {
+                            color: #28a745;
+                        }
+                        
+                        .approval-rejected {
+                            color: #dc3545;
+                        }
+                        
+                        .no-data {
+                            color: #999;
+                            font-style: italic;
+                        }
+                        
+                        @media (max-width: 768px) {
+                            .approval-flow-chart {
+                                flex-direction: column;
+                            }
+                            
+                            .flow-arrow {
+                                width: 2px;
+                                height: 30px;
+                                margin: 10px 0;
+                            }
+                            
+                            .flow-arrow::after {
+                                content: '▼';
+                                right: -8px;
+                                top: 25px;
+                            }
+                        }
+                    </style>
+                    
+                    <div class="mt-4">
+                        <a href="javascript:history.back()" class="btn btn-secondary">返回</a>
+                        {% if current_user.is_admin and approval.status == 'pending' %}
+                        <div class="btn-group ml-2">
+                            <form method="POST" action="{{ url_for('admin_approvals') }}" style="display: inline-block;">
+                                <input type="hidden" name="approval_id" value="{{ approval.id }}">
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="btn btn-success" onclick="return confirm('确定要批准此审批吗？');">批准</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('admin_approvals') }}" style="display: inline-block;">
+                                <input type="hidden" name="approval_id" value="{{ approval.id }}">
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('确定要拒绝此审批吗？');">拒绝</button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}集团航司 - LMJ（长征）集团管理平台{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">集团航司</h2>
+    
+    <!-- 集团航司列表 -->
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title mb-4">航司列表</h3>
+            
+            {% if airlines %}
+                <div class="row">
+                    {% for airline in airlines %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between items-center mb-2">
+                                        <h4 class="card-title m-0">{{ airline.name }}</h4>
+                                        <span class="badge badge-primary">{{ airline.code }}</span>
+                                    </div>
+                                    <p class="card-text text-muted mb-2">{{ airline.description }}</p>
+                                    <div class="flight-info">
+                                        <i class="fas fa-clock"></i>
+                                        <span>创建时间: {{ airline.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                                    </div>
+                                    <div class="flight-info">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>状态: {{ '活跃' if airline.is_active else '非活跃' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    暂无集团航司信息
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

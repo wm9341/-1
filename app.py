@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from functools import wraps
-from models import db, User, FlightEvent, Participant, Controller, OperationLog, get_beijing_time
+from models import db, User, FlightEvent, Participant, Controller, OperationLog, Approval, get_beijing_time
 from datetime import datetime
 import os
 import re
@@ -32,6 +32,14 @@ def admin_required(f):
         if not current_user.is_authenticated or not current_user.is_admin:
             flash('您需要管理员权限才能访问此页面')
             return redirect(url_for('dashboard'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# 集团管理页面装饰器（不需要登录）
+def group_admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # 不检查用户是否登录，直接允许访问
         return f(*args, **kwargs)
     return decorated_function
 
@@ -67,6 +75,64 @@ def create_tables():
             admin_user.set_password('admin123')
             db.session.add(admin_user)
             db.session.commit()
+        
+        # 尝试导入新添加的模型类并创建测试数据
+        try:
+            from models import Airline, Complaint, Suggestion
+            
+            # 创建集团航司测试数据（如果不存在）
+            if not Airline.query.first():
+                airline1 = Airline(
+                    name="长征航空",
+                    code="LMJ",
+                    description="长征航空是集团旗下的主要航空公司，提供国内和国际航线服务。"
+                )
+                airline2 = Airline(
+                    name="蓝天航空",
+                    code="LTA",
+                    description="蓝天航空专注于短途航线和支线航空服务，覆盖全国主要城市。"
+                )
+                db.session.add_all([airline1, airline2])
+                db.session.commit()
+            
+            # 获取管理员用户作为测试数据的提交人
+            admin_user = User.query.filter_by(username='admin').first()
+            if admin_user:
+                # 创建投诉测试数据（如果不存在）
+                if not Complaint.query.first():
+                    complaint1 = Complaint(
+                        user_id=admin_user.id,
+                        title="航班延误问题",
+                        content="最近的航班经常延误，希望能够改善航班准点率。",
+                        status="processing"
+                    )
+                    complaint2 = Complaint(
+                        user_id=admin_user.id,
+                        title="服务态度问题",
+                        content="部分机组人员服务态度不佳，影响飞行体验。",
+                        status="pending"
+                    )
+                    db.session.add_all([complaint1, complaint2])
+                    db.session.commit()
+                
+                # 创建建议与意见测试数据（如果不存在）
+                if not Suggestion.query.first():
+                    suggestion1 = Suggestion(
+                        user_id=admin_user.id,
+                        title="增加会员福利",
+                        content="建议增加会员积分兑换更多福利的选项，提高会员满意度。",
+                        status="implemented"
+                    )
+                    suggestion2 = Suggestion(
+                        user_id=admin_user.id,
+                        title="优化在线值机系统",
+                        content="在线值机系统有时响应较慢，建议进行系统优化。",
+                        status="processing"
+                    )
+                    db.session.add_all([suggestion1, suggestion2])
+                    db.session.commit()
+        except Exception as e:
+            print(f"创建测试数据时出错: {str(e)}")
 
 # 在应用启动时创建数据库表
 create_tables()
@@ -76,22 +142,41 @@ create_tables()
 def index():
     # 获取所有联飞活动
     all_flights = FlightEvent.query.all()
-    return render_template('index.html', flights=all_flights)
+    
+    # 获取集团航司信息
+    try:
+        # 尝试导入新添加的模型类
+        from models import Airline, Complaint, Suggestion
+        # 获取所有集团航司
+        all_airlines = Airline.query.all()
+        # 获取最新的投诉和建议(限制显示数量)
+        latest_complaints = Complaint.query.order_by(Complaint.created_at.desc()).limit(3).all()
+        latest_suggestions = Suggestion.query.order_by(Suggestion.created_at.desc()).limit(3).all()
+    except Exception as e:
+        # 如果模型类不存在或查询出错，设置为空列表
+        all_airlines = []
+        latest_complaints = []
+        latest_suggestions = []
+    
+    # 传递所有数据到模板
+    return render_template('index.html', flights=all_flights, airlines=all_airlines,
+                           complaints=latest_complaints, suggestions=latest_suggestions)
+
+# 系统访问页面路由
+@app.route('/system_access.html')
+def system_access():
+    return render_template('system_access.html')
 
 # 生成唯一用户ID的辅助函数
 def generate_random_user_id():
     import random
     import string
-    import time
     
-    # 使用时间戳+随机字符串的组合，确保唯一性
-    timestamp = str(int(time.time() * 1000))[-5:]
-    random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
-    
-    # 生成格式为：字母数字混合的8位ID
-    user_id = f"{timestamp}{random_str}"
-    
-    return user_id
+    # 生成5-6位随机数字ID
+    # 随机决定是5位还是6位
+    length = random.choice([5, 6])
+    # 生成指定长度的随机数字字符串
+    return ''.join(random.choices(string.digits, k=length))
 
 # 登录路由
 @app.route('/login', methods=['GET', 'POST'])
@@ -244,50 +329,48 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-# 管理员后台首页
+# 管理员后台首页（需要登录和管理员权限）
 @app.route('/admin/dashboard')
 @login_required
 @admin_required
-def admin_dashboard():
-    # 获取统计信息
-    total_users = User.query.count()
-    total_events = FlightEvent.query.count()
-    total_participants = Participant.query.count()
-    
-    return render_template('admin/dashboard.html', 
-                          total_users=total_users, 
-                          total_events=total_events, 
-                          total_participants=total_participants)
 
-# 管理员用户管理页面
+def admin_dashboard():
+    # 获取系统统计信息
+    user_count = User.query.count()
+    controller_count = Controller.query.count()
+    event_count = FlightEvent.query.count()
+    
+    # 计算已报名活动的人数（所有活动的参与者总数）
+    participant_count = Participant.query.count()
+    
+    # 获取最近的操作日志
+    recent_logs = OperationLog.query.order_by(OperationLog.created_at.desc()).limit(10).all()
+    
+    return render_template('admin/dashboard.html', user_count=user_count, controller_count=controller_count, 
+                           event_count=event_count, participant_count=participant_count, recent_logs=recent_logs)
+
+# 用户管理页面
 @app.route('/admin/users')
-@login_required
-@admin_required
+@group_admin_required
 def admin_users():
+    # 获取所有用户
     users = User.query.all()
+    # 返回用户管理页面
     return render_template('admin/users.html', users=users)
 
-# 主人账号操作记录页面
+# 操作记录页面
 @app.route('/admin/operation_logs')
-@login_required
+@group_admin_required
 def admin_operation_logs():
-    # 只允许系统主人查看操作记录
-    if not hasattr(current_user, 'is_owner') or not current_user.is_owner:
-        flash('只有系统主人才可以查看操作记录', 'danger')
-        return redirect(url_for('dashboard'))
-    
-    # 获取所有操作记录，并按时间倒序排列
+    print("访问操作记录页面，正在加载数据...")
+    # 获取所有操作记录
     logs = OperationLog.query.order_by(OperationLog.created_at.desc()).all()
-    
-    # 获取相关用户的信息，用于在模板中显示用户名
-    user_ids = set()
-    for log in logs:
-        user_ids.add(log.operator_id)
-        user_ids.add(log.target_user_id)
-    
-    users = {user.id: user for user in User.query.filter(User.id.in_(user_ids)).all()}
-    
-    return render_template('admin/operation_logs.html', logs=logs, users=users)
+    # 获取所有用户，用于显示操作人和目标用户的用户名
+    users = User.query.all()
+    # 将用户列表转换为字典，方便模板中查找
+    user_dict = {user.id: user for user in users}
+    # 返回操作记录页面
+    return render_template('admin/operation_logs.html', logs=logs, users=user_dict)
 
 # 添加管理员权限
 @app.route('/admin/users/make_admin/<int:user_id>', methods=['POST'])
@@ -371,7 +454,7 @@ def admin_remove_admin(user_id):
 # 删除用户
 @app.route('/admin/users/delete/<int:user_id>', methods=['POST'])
 @login_required
-@co_owner_required
+@admin_required
 def admin_delete_user(user_id):
     try:
         # 不能删除当前登录用户自己
@@ -408,6 +491,12 @@ def admin_delete_user(user_id):
         # 删除与该用户相关的所有参与者记录
         Participant.query.filter_by(user_id=user_id).delete()
         
+        # 删除与该用户相关的所有审批记录
+        Approval.query.filter_by(user_id=user_id).delete()
+        
+        # 如果该用户是审批人，也需要处理相关审批记录
+        Approval.query.filter_by(approved_by=user_id).delete()
+        
         # 记录删除用户日志
         delete_log = OperationLog(
             operator_id=current_user.id,
@@ -426,11 +515,13 @@ def admin_delete_user(user_id):
         flash(f'操作失败: {str(e)}', 'danger')
     return redirect(url_for('admin_users'))
 
-# 管理员联飞活动管理页面
+# 联飞活动管理页面（需要登录认证）
 @app.route('/admin/flight_events')
-@admin_required
+@login_required
 def admin_flight_events():
+    # 获取所有联飞活动
     events = FlightEvent.query.all()
+    # 返回联飞活动管理页面
     return render_template('admin/flight_events.html', events=events)
 
 # 添加联飞活动
@@ -499,6 +590,58 @@ def admin_delete_flight_event(event_id):
     db.session.delete(event)
     db.session.commit()
     flash('联飞活动已成功删除', 'success')
+    return redirect(url_for('admin_flight_events'))
+
+# 编辑联飞活动
+@app.route('/admin/flight_events/edit', methods=['POST'])
+@admin_required
+def admin_edit_flight_event():
+    try:
+        # 获取表单数据
+        event_id = request.form.get('event_id')
+        event_name = request.form.get('event_name')
+        event_description = request.form.get('event_description', '')
+        event_start_time_str = request.form.get('event_start_time')
+        event_location = request.form.get('event_location', '')
+        event_contact_person = request.form.get('event_contact_person', '')
+        event_max_participants = int(request.form.get('event_max_participants', 0))
+        event_status = request.form.get('event_status', 'upcoming')
+        event_notes = request.form.get('event_notes', '')
+        
+        # 验证必填字段
+        if not event_id or not event_name or not event_start_time_str:
+            flash('活动ID、名称和开始时间为必填项', 'danger')
+            return redirect(url_for('admin_flight_events'))
+        
+        # 获取要编辑的活动
+        event = FlightEvent.query.get_or_404(event_id)
+        
+        # 转换日期时间格式
+        try:
+            # 处理datetime-local格式 (YYYY-MM-DDTHH:MM)
+            event_start_time = datetime.strptime(event_start_time_str, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            flash('日期时间格式不正确，请使用正确的格式', 'danger')
+            return redirect(url_for('admin_flight_events'))
+        
+        # 更新活动信息
+        event.name = event_name
+        event.description = event_description
+        event.start_time = event_start_time
+        event.location = event_location
+        event.contact_person = event_contact_person
+        event.max_participants = event_max_participants
+        event.status = event_status
+        event.notes = event_notes
+        
+        # 提交更改到数据库
+        db.session.commit()
+        flash('联飞活动更新成功', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'更新联飞活动时出错: {str(e)}', 'danger')
+    
     return redirect(url_for('admin_flight_events'))
 
 # 修改用户名（系统主人专用）
@@ -603,15 +746,191 @@ def huoda():
     # 这里可以添加火大系统的相关逻辑
     return render_template('huoda.html')
 
-# 管制员管理路由
+# 管制员管理页面
 @app.route('/admin/controllers')
+@group_admin_required
+def admin_controllers():
+    # 获取所有管制员
+    controllers = Controller.query.all()
+    # 获取所有用户
+    users = User.query.all()
+    # 返回管制员管理页面
+    return render_template('admin/controllers.html', controllers=controllers, users=users)
+
+# 管理员投诉管理页面
+@app.route('/admin/complaints')
 @login_required
 @admin_required
-def admin_controllers():
-    controllers = Controller.query.order_by(Controller.created_at.desc()).all()
-    # 获取所有用户列表，用于下拉选择
-    users = User.query.order_by(User.username).all()
-    return render_template('admin/controllers.html', controllers=controllers, users=users)
+def admin_complaints():
+    try:
+        from models import Complaint
+        # 获取所有投诉，按创建时间倒序排列
+        complaints = Complaint.query.order_by(Complaint.created_at.desc()).all()
+    except Exception as e:
+        complaints = []
+        flash(f'获取投诉列表时出错: {str(e)}', 'danger')
+    return render_template('admin/admin_complaints.html', complaints=complaints)
+
+# 管理员建议与意见管理页面
+@app.route('/admin/suggestions')
+@login_required
+@admin_required
+def admin_suggestions():
+    try:
+        from models import Suggestion
+        # 获取所有建议与意见，按创建时间倒序排列
+        suggestions = Suggestion.query.order_by(Suggestion.created_at.desc()).all()
+    except Exception as e:
+        suggestions = []
+        flash(f'获取建议列表时出错: {str(e)}', 'danger')
+    return render_template('admin/admin_suggestions.html', suggestions=suggestions)
+
+# 更新建议状态
+@app.route('/admin/suggestions/update_status/<int:suggestion_id>/<status>', methods=['POST'])
+@login_required
+@admin_required
+def admin_suggestions_update_status(suggestion_id, status):
+    try:
+        from models import Suggestion
+        # 查找建议
+        suggestion = Suggestion.query.get_or_404(suggestion_id)
+        
+        # 更新状态
+        suggestion.status = status
+        db.session.commit()
+        
+        flash('建议状态更新成功！', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'更新建议状态失败: {str(e)}', 'danger')
+    return redirect(url_for('admin_suggestions'))
+
+# 更新投诉状态
+@app.route('/admin/complaints/update_status/<int:complaint_id>/<status>', methods=['POST'])
+@login_required
+@admin_required
+def admin_complaints_update_status(complaint_id, status):
+    try:
+        from models import Complaint
+        # 查找投诉
+        complaint = Complaint.query.get_or_404(complaint_id)
+        
+        # 更新状态
+        complaint.status = status
+        db.session.commit()
+        
+        flash('投诉状态更新成功！', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'更新投诉状态失败: {str(e)}', 'danger')
+    return redirect(url_for('admin_complaints'))
+
+# 集团航司管理
+@app.route('/admin/airlines')
+@login_required
+@admin_required
+def admin_airlines():
+    from models import Airline
+    airlines = Airline.query.order_by(Airline.created_at.desc()).all()
+    return render_template('admin/admin_airlines.html', airlines=airlines)
+
+# 添加集团航司
+@app.route('/admin/airlines/add', methods=['POST'])
+@login_required
+@admin_required
+def admin_airlines_add():
+    from models import Airline
+    from datetime import datetime
+    
+    airline_name = request.form.get('airline_name')
+    airline_group_number = request.form.get('airline_group_number')
+    airline_manager = request.form.get('airline_manager')
+    airline_manager_qq = request.form.get('airline_manager_qq')
+    
+    # 验证输入
+    if not airline_name:
+        flash('请填写必填字段', 'error')
+        return redirect(url_for('admin_airlines'))
+    
+    # 创建新航司
+    new_airline = Airline(
+        name=airline_name,
+        group_number=airline_group_number,
+        manager=airline_manager,
+        manager_qq=airline_manager_qq,
+        created_at=datetime.utcnow()
+    )
+    
+    try:
+        db.session.add(new_airline)
+        db.session.commit()
+        flash('集团航司添加成功', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('添加失败，请重试', 'error')
+    
+    return redirect(url_for('admin_airlines'))
+
+# 编辑集团航司
+@app.route('/admin/airlines/edit', methods=['POST'])
+@login_required
+@admin_required
+def admin_airlines_edit():
+    from models import Airline
+    
+    airline_id = request.form.get('airline_id')
+    airline_name = request.form.get('airline_name')
+    airline_group_number = request.form.get('airline_group_number')
+    airline_manager = request.form.get('airline_manager')
+    airline_manager_qq = request.form.get('airline_manager_qq')
+    
+    # 验证输入
+    if not airline_id or not airline_name:
+        flash('请填写必填字段', 'error')
+        return redirect(url_for('admin_airlines'))
+    
+    # 查找航司
+    airline = Airline.query.get(airline_id)
+    if not airline:
+        flash('航司不存在', 'error')
+        return redirect(url_for('admin_airlines'))
+    
+    # 更新航司信息
+    airline.name = airline_name
+    airline.group_number = airline_group_number
+    airline.manager = airline_manager
+    airline.manager_qq = airline_manager_qq
+    
+    try:
+        db.session.commit()
+        flash('集团航司更新成功', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('更新失败，请重试', 'error')
+    
+    return redirect(url_for('admin_airlines'))
+
+# 删除集团航司
+@app.route('/admin/airlines/delete/<int:airline_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_airlines_delete(airline_id):
+    from models import Airline
+    
+    airline = Airline.query.get(airline_id)
+    if not airline:
+        flash('航司不存在', 'error')
+        return redirect(url_for('admin_airlines'))
+    
+    try:
+        db.session.delete(airline)
+        db.session.commit()
+        flash('集团航司删除成功', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('删除失败，请重试', 'error')
+    
+    return redirect(url_for('admin_airlines'))
 
 @app.route('/admin/controllers/add', methods=['POST'])
 @login_required
@@ -734,6 +1053,8 @@ def admin_get_controller_user_id(controller_id):
         'user_id': controller.user_id
     })
 
+
+
 @app.route('/admin/controllers/delete/<int:controller_id>', methods=['POST'])
 @login_required
 @admin_required
@@ -753,9 +1074,378 @@ def admin_controllers_delete(controller_id):
     
     return redirect(url_for('admin_controllers'))
 
+# 集团航司路由
+@app.route('/airlines')
+def airlines():
+    try:
+        from models import Airline
+        # 获取所有集团航司
+        all_airlines = Airline.query.all()
+    except Exception as e:
+        all_airlines = []
+        flash(f'获取航司信息时出错: {str(e)}', 'danger')
+    return render_template('airlines.html', airlines=all_airlines)
+
+# 投诉路由
+@app.route('/complaints', methods=['GET', 'POST'])
+def complaints():
+    if request.method == 'POST':
+        # 提交新投诉需要登录
+        if not current_user.is_authenticated:
+            flash('请先登录后再提交投诉', 'danger')
+            return redirect(url_for('login'))
+            
+        # 提交新投诉
+        title = request.form.get('title')
+        content = request.form.get('content')
+        complaint_type = request.form.get('complaint_type')
+        
+        # 初始化投诉对象信息
+        target_name = None
+        target_qq = None
+        
+        # 根据投诉类型获取目标信息
+        if complaint_type == 'group_member':
+            target_name = request.form.get('group_member')
+            # 从选项值中提取QQ号 (格式：姓名(QQ号))
+            if target_name and '(' in target_name and ')' in target_name:
+                qq_start = target_name.find('(') + 1
+                qq_end = target_name.find(')')
+                target_qq = target_name[qq_start:qq_end] if qq_start < qq_end else None
+        elif complaint_type == 'airline_chairman':
+            target_name = request.form.get('airline_chairman')
+            # 从选项值中提取QQ号
+            if target_name and '(' in target_name and ')' in target_name:
+                qq_start = target_name.find('(') + 1
+                qq_end = target_name.find(')')
+                target_qq = target_name[qq_start:qq_end] if qq_start < qq_end else None
+        elif complaint_type == 'airline_member':
+            target_name = request.form.get('airline_member_name')
+            target_qq = request.form.get('airline_member_qq')
+            # 航司成员需要验证姓名和QQ号
+            if not target_name or not target_qq:
+                flash('投诉航司成员时，姓名和QQ号为必填项', 'danger')
+                return redirect(url_for('complaints'))
+        
+        if not title or not content or not complaint_type:
+            flash('投诉标题、内容和投诉对象类型为必填项', 'danger')
+            return redirect(url_for('complaints'))
+        
+        try:
+            from models import Complaint
+            new_complaint = Complaint(
+                user_id=current_user.id,
+                title=title,
+                content=content,
+                status='pending',
+                complaint_type=complaint_type,
+                target_name=target_name,
+                target_qq=target_qq
+            )
+            
+            db.session.add(new_complaint)
+            db.session.commit()
+            flash('投诉提交成功，我们会尽快处理', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'提交投诉时出错: {str(e)}', 'danger')
+        
+        return redirect(url_for('complaints'))
+    
+    return render_template('complaints.html')
+
+# 建议与意见路由
+@app.route('/suggestions', methods=['GET', 'POST'])
+def suggestions():
+    if request.method == 'POST':
+        # 提交新建议需要登录
+        if not current_user.is_authenticated:
+            flash('请先登录后再提交建议与意见', 'danger')
+            return redirect(url_for('login'))
+            
+        # 提交新建议
+        title = request.form.get('title')
+        content = request.form.get('content')
+        
+        if not title or not content:
+            flash('建议标题和内容为必填项', 'danger')
+            return redirect(url_for('suggestions'))
+        
+        try:
+            from models import Suggestion
+            new_suggestion = Suggestion(
+                user_id=current_user.id,
+                title=title,
+                content=content,
+                status='pending'
+            )
+            
+            db.session.add(new_suggestion)
+            db.session.commit()
+            flash('建议提交成功，感谢您的反馈', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'提交建议时出错: {str(e)}', 'danger')
+        
+        return redirect(url_for('suggestions'))
+    
+    return render_template('suggestions.html')
+
+# 审批路由 - 用户查看和提交审批
+@app.route('/approvals', methods=['GET', 'POST'])
+def approvals():
+    if request.method == 'POST':
+        # 提交新审批需要登录
+        if not current_user.is_authenticated:
+            flash('请先登录后再提交审批申请', 'danger')
+            return redirect(url_for('login'))
+            
+        # 提交新审批
+        title = request.form.get('title')
+        content = request.form.get('content')
+        approval_type = request.form.get('approval_type')
+        qq_number = request.form.get('qq_number')
+        
+        # 由于需求变更，所有字段均为可选，不再进行必填检查
+        # 创建新审批
+        try:
+            from models import Approval
+            new_approval = Approval(
+                user_id=current_user.id,
+                title=title,
+                content=content,
+                approval_type=approval_type,
+                qq_number=qq_number,
+                status='pending'
+            )
+            
+            db.session.add(new_approval)
+            db.session.commit()
+            flash('审批申请提交成功，等待管理员审核', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'提交审批申请时出错: {str(e)}', 'danger')
+        
+        return redirect(url_for('approvals'))
+    
+    try:
+        from models import Approval
+        # 获取当前用户的审批列表
+        user_approvals = []
+        if current_user.is_authenticated and hasattr(current_user, 'id') and current_user.id:
+            user_approvals = Approval.query.filter_by(user_id=current_user.id).order_by(Approval.created_at.desc()).all()
+            # 过滤掉可能的None对象
+            user_approvals = [approval for approval in user_approvals if approval is not None]
+    except Exception as e:
+        user_approvals = []
+        flash(f'获取审批列表时出错: {str(e)}', 'danger')
+    
+    return render_template('approvals.html', approvals=user_approvals)
+
+# 管理员审批路由
+@app.route('/admin/approvals', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_approvals():
+    try:
+        from models import Approval, User
+        import json
+        
+        # 处理审批操作
+        if request.method == 'POST':
+            approval_id = request.form.get('approval_id')
+            action = request.form.get('action')  # approve 或 reject
+            
+            if not approval_id or not action:
+                flash('缺少必要参数', 'danger')
+                return redirect(url_for('admin_approvals'))
+            
+            # 查找要处理的审批
+            approval = Approval.query.get_or_404(approval_id)
+            
+            # 如果已经被拒绝，不允许再操作
+            if approval.status == 'rejected':
+                flash(f'审批 #{approval.id} 已经被拒绝，无法再次操作', 'danger')
+                return redirect(url_for('admin_approvals'))
+            
+            # 当前用户信息
+            current_user_id = str(current_user.id)
+            is_owner = hasattr(current_user, 'is_owner') and current_user.is_owner
+            is_co_owner = hasattr(current_user, 'is_co_owner') and current_user.is_co_owner
+            is_admin = hasattr(current_user, 'is_admin') and current_user.is_admin
+            
+            # 拒绝操作可以由任何有审批权限的人执行
+            if action == 'reject':
+                approval.status = 'rejected'
+                approval.approved_by = current_user.id
+                approval.updated_at = get_beijing_time()
+                db.session.commit()
+                flash(f'审批 #{approval.id} 已成功拒绝', 'success')
+                return redirect(url_for('admin_approvals'))
+            
+            # 处理同意操作
+            if action == 'approve':
+                # 解析现有的审批状态
+                admin_approvals = json.loads(approval.admin_approvals or '{}')
+                co_owner_approvals = json.loads(approval.co_owner_approvals or '{}')
+                
+                # 获取所有管理员和副主
+                all_admins = User.query.filter_by(is_admin=True).all()
+                all_co_owners = User.query.filter_by(is_co_owner=True).all()
+                admin_count = len(all_admins)
+                co_owner_count = len(all_co_owners)
+                
+                # 根据用户角色处理审批
+                if is_owner:
+                    # 主人只能在所有管理员和副主都同意后才能批准
+                    if approval.admin_approved_count == admin_count and approval.co_owner_approved_count == co_owner_count:
+                        approval.status = 'approved'
+                        approval.approved_by = current_user.id
+                        approval.updated_at = get_beijing_time()
+                        db.session.commit()
+                        flash(f'审批 #{approval.id} 已成功批准', 'success')
+                    else:
+                        flash(f'审批 #{approval.id} 尚未获得所有管理员和副主的同意，主人无法进行最终批准', 'danger')
+                elif is_co_owner:
+                    # 副主的审批 - 只有在所有管理员都同意后才能进行
+                    if approval.admin_approved_count < admin_count:
+                        flash(f'审批 #{approval.id} 尚未获得所有管理员的同意，副主无法进行审批', 'danger')
+                    elif current_user_id not in co_owner_approvals:
+                        co_owner_approvals[current_user_id] = 'approved'
+                        approval.co_owner_approvals = json.dumps(co_owner_approvals)
+                        approval.co_owner_approved_count += 1
+                        approval.updated_at = get_beijing_time()
+                        
+                        # 检查是否所有管理员和副主都已同意
+                        if approval.admin_approved_count == admin_count and approval.co_owner_approved_count == co_owner_count:
+                            approval.status = 'owner_pending'  # 等待主人最终批准
+                        else:
+                            approval.status = 'co_owner_pending'  # 部分副主已批准
+                        
+                        db.session.commit()
+                        flash(f'您已成功同意审批 #{approval.id}', 'success')
+                    else:
+                        flash(f'您已经对审批 #{approval.id} 进行过操作', 'info')
+                elif is_admin:
+                    # 管理员的审批
+                    if current_user_id not in admin_approvals:
+                        admin_approvals[current_user_id] = 'approved'
+                        approval.admin_approvals = json.dumps(admin_approvals)
+                        approval.admin_approved_count += 1
+                        approval.updated_at = get_beijing_time()
+                        
+                        # 检查是否所有管理员都已同意
+                        if approval.admin_approved_count == admin_count:
+                            approval.status = 'co_owner_pending'  # 等待副主审批
+                        else:
+                            approval.status = 'admin_pending'  # 部分管理员已批准
+                        
+                        db.session.commit()
+                        flash(f'您已成功同意审批 #{approval.id}', 'success')
+                    else:
+                        flash(f'您已经对审批 #{approval.id} 进行过操作', 'info')
+                else:
+                    flash('您没有审批权限', 'danger')
+            
+            return redirect(url_for('admin_approvals'))
+        
+        # 获取所有审批列表
+        all_approvals = Approval.query.order_by(Approval.created_at.desc()).all()
+        
+        # 获取用户信息用于显示
+        users = {user.id: user for user in User.query.all()}
+    except Exception as e:
+        all_approvals = []
+        users = {}
+        flash(f'获取审批列表时出错: {str(e)}', 'danger')
+    
+    return render_template('admin/admin_approvals.html', approvals=all_approvals, users=users)
+
+# 审批详情路由
+@app.route('/approvals/<int:approval_id>')
+def approval_details(approval_id):
+    try:
+        from models import Approval, User
+        approval = Approval.query.get_or_404(approval_id)
+        
+        # 确保用户只能查看自己的审批或管理员可以查看所有审批
+        if approval.user_id != current_user.id and not (current_user.is_authenticated and current_user.is_admin):
+            flash('您无权查看此审批', 'danger')
+            return redirect(url_for('approvals'))
+        
+        # 获取相关用户信息
+        user = User.query.get(approval.user_id)
+        approved_user = User.query.get(approval.approved_by) if approval.approved_by else None
+        
+        # 获取所有管理员和副主的总数，用于显示审批进度
+        all_admins = User.query.filter_by(is_admin=True).all()
+        all_co_owners = User.query.filter_by(is_co_owner=True).all()
+        all_admins_count = len(all_admins)
+        all_co_owners_count = len(all_co_owners)
+    except Exception as e:
+        flash(f'获取审批详情时出错: {str(e)}', 'danger')
+        return redirect(url_for('approvals'))
+    
+    # 获取所有用户数据，用于在流程图中显示审批人信息
+    all_users = User.query.all()
+    users_dict = {str(user.id): {'username': user.username} for user in all_users}
+    
+    # 确保审批数据是可JSON序列化的
+    import json
+    
+    # 创建一个新的字典来存储可序列化的数据，并确保包含所有模板需要的字段
+    approval_data = {
+        'id': approval.id,
+        'approval_type': approval.approval_type,
+        'status': approval.status,
+        'title': approval.title,
+        'content': approval.content,
+        'qq_number': getattr(approval, 'qq_number', None),
+        'created_at': approval.created_at,
+        'updated_at': getattr(approval, 'updated_at', None),
+        'user_id': approval.user_id,
+        'approved_by': getattr(approval, 'approved_by', None),
+        'admin_approved_count': getattr(approval, 'admin_approved_count', 0),
+        'co_owner_approved_count': getattr(approval, 'co_owner_approved_count', 0),
+        'admin_approvals': {},
+        'co_owner_approvals': {}
+    }
+    
+    # 处理admin_approvals字段
+    if hasattr(approval, 'admin_approvals') and approval.admin_approvals:
+        try:
+            if isinstance(approval.admin_approvals, str):
+                approval_data['admin_approvals'] = json.loads(approval.admin_approvals)
+            else:
+                approval_data['admin_approvals'] = approval.admin_approvals
+        except:
+            approval_data['admin_approvals'] = {}
+    
+    # 处理co_owner_approvals字段
+    if hasattr(approval, 'co_owner_approvals') and approval.co_owner_approvals:
+        try:
+            if isinstance(approval.co_owner_approvals, str):
+                approval_data['co_owner_approvals'] = json.loads(approval.co_owner_approvals)
+            else:
+                approval_data['co_owner_approvals'] = approval.co_owner_approvals
+        except:
+            approval_data['co_owner_approvals'] = {}
+    
+    # 准备渲染模板所需的数据
+    template_data = {
+        'approval': approval_data,
+        'user': user,
+        'approved_user': approved_user,
+        'all_admins_count': all_admins_count,
+        'all_co_owners_count': all_co_owners_count,
+        'users': users_dict
+    }
+    
+    return render_template('approval_details.html', **template_data)
+
 if __name__ == '__main__':
     # 创建数据库表和初始数据
     create_tables()
-    # 从环境变量获取DEBUG模式设置，默认为False
-    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    # 强制启用debug模式
+    debug_mode = True
     app.run(debug=debug_mode, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

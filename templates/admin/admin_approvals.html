@@ -1,0 +1,143 @@
+{% extends "admin/admin_base.html" %}
+{% block title %}审批管理 - 管理平台{% endblock %}
+{% block content %}
+<div class="admin-content">
+    <div class="admin-content-header">
+        <h2>审批管理</h2>
+    </div>
+    <div class="admin-content-body">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title">所有审批申请列表</h3>
+            </div>
+            <div class="card-body">
+                {% if approvals %}
+                <div class="table-responsive">
+                    <table class="table table-hover admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>申请人</th>
+                                <th>类型</th>
+                                <th>状态</th>
+                                <th>提交时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for approval in approvals %}
+                            <tr>
+                                <td>{{ approval.id }}</td>
+                                <td>{{ users[approval.user_id].username if approval.user_id in users else '未知用户' }}</td>
+                                <td>
+                                    {% if approval.approval_type == 'leave' %}请假
+                                    {% elif approval.approval_type == 'expense' %}费用报销
+                                    {% elif approval.approval_type == 'travel' %}出差申请
+                                    {% else %}其他
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if approval.status == 'pending' %}
+                                    <span class="badge badge-warning">待审批</span>
+                                    {% elif approval.status == 'admin_pending' %}
+                                    <span class="badge badge-primary">等待管理员审批</span>
+                                    {% elif approval.status == 'co_owner_pending' %}
+                                    <span class="badge badge-secondary">等待副主审批</span>
+                                    {% elif approval.status == 'owner_pending' %}
+                                    <span class="badge badge-info">等待主人最终审批</span>
+                                    {% elif approval.status == 'approved' %}
+                                    <span class="badge badge-success">已批准</span>
+                                    {% elif approval.status == 'rejected' %}
+                                    <span class="badge badge-danger">已拒绝</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ approval.created_at }}</td>
+                                <td>
+                                    <a href="{{ url_for('approval_details', approval_id=approval.id) }}" class="btn btn-info btn-sm">查看详情</a>
+                                    {% if approval.status not in ['approved', 'rejected'] %}
+                                    <div class="btn-group">
+                                        <form method="POST" action="{{ url_for('admin_approvals') }}" style="display: inline-block;">
+                                            <input type="hidden" name="approval_id" value="{{ approval.id }}">
+                                            <input type="hidden" name="action" value="approve">
+                                            <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('确定要批准此审批吗？');">批准</button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin_approvals') }}" style="display: inline-block;">
+                                            <input type="hidden" name="approval_id" value="{{ approval.id }}">
+                                            <input type="hidden" name="action" value="reject">
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('确定要拒绝此审批吗？');">拒绝</button>
+                                        </form>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    当前没有审批申请
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 为表格添加排序功能
+    document.addEventListener('DOMContentLoaded', function() {
+        const tableHeaders = document.querySelectorAll('.admin-table th');
+        tableHeaders.forEach((header, index) => {
+            header.addEventListener('click', function() {
+                sortTable(index);
+            });
+        });
+    });
+    
+    function sortTable(columnIndex) {
+        const table = document.querySelector('.admin-table');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const headers = document.querySelectorAll('.admin-table th');
+        const currentHeader = headers[columnIndex];
+        
+        // 检查是否已经排序过，切换排序方向
+        const isAscending = currentHeader.getAttribute('data-sort') !== 'desc';
+        
+        // 重置所有表头的排序状态
+        headers.forEach(h => {
+            h.removeAttribute('data-sort');
+        });
+        
+        // 设置当前表头的排序状态
+        currentHeader.setAttribute('data-sort', isAscending ? 'asc' : 'desc');
+        
+        // 排序行
+        rows.sort((a, b) => {
+            const aValue = a.children[columnIndex].textContent.trim();
+            const bValue = b.children[columnIndex].textContent.trim();
+            
+            if (!isNaN(Date.parse(aValue)) && !isNaN(Date.parse(bValue))) {
+                // 日期排序
+                return isAscending ? 
+                    new Date(aValue) - new Date(bValue) : 
+                    new Date(bValue) - new Date(aValue);
+            } else if (!isNaN(parseFloat(aValue)) && !isNaN(parseFloat(bValue))) {
+                // 数字排序
+                return isAscending ? 
+                    parseFloat(aValue) - parseFloat(bValue) : 
+                    parseFloat(bValue) - parseFloat(aValue);
+            } else {
+                // 字符串排序
+                return isAscending ? 
+                    aValue.localeCompare(bValue) : 
+                    bValue.localeCompare(aValue);
+            }
+        });
+        
+        // 重新添加排序后的行
+        rows.forEach(row => tbody.appendChild(row));
+    }
+</script>
+{% endblock %}

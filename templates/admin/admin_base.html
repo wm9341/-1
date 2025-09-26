@@ -7,6 +7,8 @@
             <h3>管理后台</h3>
         </div>
         <ul class="admin-sidebar-menu">
+            {% if request.endpoint == 'group_management' %}
+            {% else %}
             <li>
                 <a href="{{ url_for('admin_dashboard') }}" class="admin-sidebar-item {{ 'active' if request.endpoint == 'admin_dashboard' else '' }}">
                     <i class="fas fa-tachometer-alt"></i>
@@ -20,22 +22,44 @@
                 </a>
             </li>
             <li>
-                <a href="{{ url_for('admin_flight_events') }}" class="admin-sidebar-item {{ 'active' if request.endpoint == 'admin_flight_events' else '' }}">
-                    <i class="fas fa-plane"></i>
-                    <span>联飞活动管理</span>
-                </a>
-            </li>
-            <li>
                 <a href="{{ url_for('admin_controllers') }}" class="admin-sidebar-item {{ 'active' if request.endpoint == 'admin_controllers' else '' }}">
                     <i class="fas fa-tower"></i>
                     <span>管制员管理</span>
                 </a>
             </li>
+
+            {% endif %}
+            {% if request.endpoint != 'group_management' %}
             {% if current_user.is_owner %}
             <li>
                 <a href="{{ url_for('admin_operation_logs') }}" class="admin-sidebar-item {{ 'active' if request.endpoint == 'admin_operation_logs' else '' }}">
                     <i class="fas fa-history"></i>
                     <span>操作记录</span>
+                </a>
+            </li>
+            {% endif %}
+            <li>
+                <a href="{{ url_for('admin_complaints') }}" class="admin-sidebar-item {{ 'active' if request.endpoint == 'admin_complaints' else '' }}">
+                    <i class="fas fa-comment-alt-exclamation"></i>
+                    <span>投诉管理</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('admin_suggestions') }}" class="admin-sidebar-item {{ 'active' if request.endpoint == 'admin_suggestions' else '' }}">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>建议与意见管理</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('admin_approvals') }}" class="admin-sidebar-item {{ 'active' if request.endpoint == 'admin_approvals' else '' }}">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>审批管理</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('admin_airlines') }}" class="admin-sidebar-item {{ 'active' if request.endpoint == 'admin_airlines' else '' }}">
+                    <i class="fas fa-plane"></i>
+                    <span>集团航司管理</span>
                 </a>
             </li>
             {% endif %}
@@ -194,6 +218,30 @@
     .admin-content-header h2 {
         margin: 0;
         color: #111827;
+        text-align: left;
+    }
+
+    /* 内容区域主体样式 - 确保内容靠左对齐 */
+    .admin-content-body {
+        text-align: left;
+    }
+
+    /* 确保表单元素靠左对齐 */
+    .form-group {
+        text-align: left;
+        margin-bottom: 1rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        text-align: left;
+    }
+
+    .form-group input {
+        display: block;
+        width: 100%;
+        text-align: left;
     }
     
     /* 卡片样式 */

@@ -94,3 +94,62 @@ class OperationLog(db.Model):
     target_user = db.relationship('User', foreign_keys=[target_user_id])
     details = db.Column(db.Text, nullable=True)  # 操作详情
     created_at = db.Column(db.DateTime, default=get_beijing_time)  # 操作时间
+
+# 集团航司模型
+class Airline(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # 航司名称
+    code = db.Column(db.String(10), nullable=False, unique=True)  # 航司代码
+    description = db.Column(db.Text, nullable=True)  # 航司描述
+    logo_url = db.Column(db.String(200), nullable=True)  # 航司logo URL
+    group_number = db.Column(db.String(20), nullable=True)  # 航司群号
+    manager = db.Column(db.String(50), nullable=True)  # 负责人
+    manager_qq = db.Column(db.String(20), nullable=True)  # 负责人QQ号
+    created_at = db.Column(db.DateTime, default=get_beijing_time)
+    updated_at = db.Column(db.DateTime, default=get_beijing_time, onupdate=get_beijing_time)
+
+# 投诉模型
+class Complaint(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # 投诉用户ID
+    user = db.relationship('User', backref='complaints')
+    title = db.Column(db.String(100), nullable=False)  # 投诉标题
+    content = db.Column(db.Text, nullable=False)  # 投诉内容
+    status = db.Column(db.String(20), default='pending')  # 状态: pending, processing, resolved, rejected
+    # 投诉对象相关字段
+    complaint_type = db.Column(db.String(50), nullable=True)  # 投诉对象类型: group_member, airline_chairman, airline_member
+    target_name = db.Column(db.String(100), nullable=True)  # 目标名称
+    target_qq = db.Column(db.String(20), nullable=True)  # 目标QQ号
+    created_at = db.Column(db.DateTime, default=get_beijing_time)
+    updated_at = db.Column(db.DateTime, default=get_beijing_time, onupdate=get_beijing_time)
+
+# 建议与意见模型
+class Suggestion(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # 提交用户ID
+    user = db.relationship('User', backref='suggestions')
+    title = db.Column(db.String(100), nullable=False)  # 建议标题
+    content = db.Column(db.Text, nullable=False)  # 建议内容
+    status = db.Column(db.String(20), default='pending')  # 状态: pending, processing, implemented, rejected
+    created_at = db.Column(db.DateTime, default=get_beijing_time)
+    updated_at = db.Column(db.DateTime, default=get_beijing_time, onupdate=get_beijing_time)
+
+# 审批模型
+class Approval(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # 申请用户ID
+    user = db.relationship('User', foreign_keys=[user_id], backref='approvals')
+    content = db.Column(db.Text, nullable=False)  # 审批内容
+    approval_type = db.Column(db.String(50), nullable=False)  # 审批类型，如：membership, event, resource
+    qq_number = db.Column(db.String(30), nullable=False)  # 申请人QQ号，必填
+    status = db.Column(db.String(20), default='pending')  # 状态: pending, admin_pending, co_owner_pending, owner_pending, approved, rejected
+    created_at = db.Column(db.DateTime, default=get_beijing_time)
+    updated_at = db.Column(db.DateTime, default=get_beijing_time, onupdate=get_beijing_time)
+    approved_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # 最终审批人ID
+    approved_user = db.relationship('User', foreign_keys=[approved_by])
+    
+    # 多级审批相关字段
+    admin_approvals = db.Column(db.Text, nullable=True)  # 存储管理员的审批状态 JSON格式
+    co_owner_approvals = db.Column(db.Text, nullable=True)  # 存储副主的审批状态 JSON格式
+    admin_approved_count = db.Column(db.Integer, default=0)  # 已同意的管理员数量
+    co_owner_approved_count = db.Column(db.Integer, default=0)  # 已同意的副主数量

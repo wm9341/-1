@@ -62,6 +62,12 @@
             text-decoration: none;
         }
         
+        .ml-auto {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+        }
+        
         /* 按钮样式 */
         .btn {
             display: inline-block;
@@ -113,6 +119,26 @@
         .admin-btn:hover {
             background-color: #73d13d;
             border-color: #73d13d;
+        }
+        
+        /* 用户信息样式 */
+        .user-info {
+            margin-right: 1rem;
+            text-align: right;
+            min-width: 200px;
+        }
+        
+        .welcome-text {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            color: #333;
+        }
+        
+        .user-id {
+            display: block;
+            font-size: 0.875rem;
+            color: #6c757d;
         }
         
         /* 主要内容区域 */
@@ -561,6 +587,10 @@
             <a class="navbar-brand" href="{{ url_for('index') }}">LMJ（长征）集团管理平台</a>
             <div class="ml-auto">
                 {% if current_user.is_authenticated %}
+                    <div class="user-info">
+                        <span class="welcome-text">欢迎回来，{{ current_user.username }}！</span>
+                        <span class="user-id">您的用户ID：{{ current_user.user_id or '未生成' }}</span>
+                    </div>
                     {% if current_user.is_admin %}
                         <a href="{{ url_for('admin_dashboard') }}" class="btn admin-btn">
                             管理后台
@@ -585,18 +615,29 @@
     <div class="main-container">
         <!-- 侧边导航栏 -->
         <div class="sidebar">
-            <a href="{{ url_for('index') }}" class="sidebar-item {{ 'active' if request.endpoint == 'index' else '' }}">
-                <i class="fas fa-home"></i>
-                <span>首页</span>
-            </a>
             <a href="{{ url_for('dashboard') }}" class="sidebar-item {{ 'active' if request.endpoint == 'dashboard' else '' }}">
                 <i class="fas fa-plane-departure"></i>
                 <span>活动</span>
-                <i class="fas fa-chevron-right dropdown-icon"></i>
             </a>
             <a href="{{ url_for('controllers_list') }}" class="sidebar-item {{ 'active' if request.endpoint == 'controllers_list' else '' }}">
                 <i class="fas fa-users"></i>
                 <span>管制员列表</span>
+            </a>
+            <a href="{{ url_for('airlines') }}" class="sidebar-item {{ 'active' if request.endpoint == 'airlines' else '' }}">
+                <i class="fas fa-building"></i>
+                <span>集团航司</span>
+            </a>
+            <a href="{{ url_for('complaints') }}" class="sidebar-item {{ 'active' if request.endpoint == 'complaints' else '' }}">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>投诉</span>
+            </a>
+            <a href="{{ url_for('suggestions') }}" class="sidebar-item {{ 'active' if request.endpoint == 'suggestions' else '' }}">
+                <i class="fas fa-lightbulb"></i>
+                <span>建议与意见</span>
+            </a>
+            <a href="{{ url_for('approvals') }}" class="sidebar-item {{ 'active' if request.endpoint == 'approvals' else '' }}">
+                <i class="fas fa-clipboard-check"></i>
+                <span>流程审批</span>
             </a>
             <a href="{{ url_for('huoda') }}" class="sidebar-item {{ 'active' if request.endpoint == 'huoda' else '' }}">
                 <i class="fas fa-fire"></i>

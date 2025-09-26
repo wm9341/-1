@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}建议与意见 - LMJ（长征）集团管理平台{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">建议与意见</h2>
+    
+    <!-- 提交建议表单 -->
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title mb-4">提交建议与意见</h3>
+            {% if current_user.is_authenticated %}
+                <form method="POST">
+                    <div class="mb-4">
+                        <label for="title" class="form-label">建议标题</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="content" class="form-label">建议内容</label>
+                        <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">提交建议</button>
+                </form>
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i> 请先<a href="{{ url_for('login') }}">登录</a>后再提交建议与意见。
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block page_title %}集团航司管理{% endblock %}
+
+{% block admin_content %}
+<div class="admin-airlines">
+    <!-- 添加航司按钮 -->
+    <div class="mb-4">
+        <button class="admin-btn admin-btn-success" onclick="document.getElementById('addAirlineModal').style.display='block'">
+            <i class="fas fa-plus"></i> 添加集团航司
+        </button>
+    </div>
+    
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3>集团航司列表</h3>
+        </div>
+        <div class="admin-card-body">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>航司名称</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for airline in airlines %}
+                    <tr>
+                        <td>{{ airline.id }}</td>
+                        <td>{{ airline.name }}</td>
+                        <td>{{ airline.created_at.strftime('%Y-%m-%d %H:%M:%S') if airline.created_at else 'N/A' }}</td>
+                        <td>
+                            <div class="admin-btn-group">
+                                <button class="admin-btn admin-btn-primary" data-toggle="modal" data-target="#editAirlineModal" data-id="{{ airline.id }}" data-name="{{ airline.name }}" data-group_number="{{ airline.group_number }}" data-manager="{{ airline.manager }}" data-manager_qq="{{ airline.manager_qq }}">
+                                        编辑
+                                    </button>
+                                <form action="{{ url_for('admin_airlines_delete', airline_id=airline.id) }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="admin-btn admin-btn-danger" onclick="return confirm('确定要删除这个航司吗？删除后将无法恢复。');">
+                                        删除
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if airlines|length == 0 %}
+                    <tr>
+                        <td colspan="6" class="text-center">暂无集团航司数据</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 添加航司模态框 -->
+<div id="addAirlineModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <span class="close" onclick="document.getElementById('addAirlineModal').style.display='none'" style="position: absolute; top: 20px; right: 30px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer;">×</span>
+    <div class="modal-content" style="background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 50%; max-width: 600px; border-radius: 8px;">
+        <div class="modal-header" style="margin-bottom: 20px;">
+            <h2>添加集团航司</h2>
+        </div>
+        <form action="{{ url_for('admin_airlines_add') }}" method="POST">
+            <div class="form-group">
+                <label for="airline_name">航司名称 <span style="color:red;">*</span></label>
+                <input type="text" id="airline_name" name="airline_name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="airline_group_number">航司群号</label>
+                <input type="text" id="airline_group_number" name="airline_group_number" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="airline_manager">负责人</label>
+                <input type="text" id="airline_manager" name="airline_manager" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="airline_manager_qq">负责人QQ号</label>
+                <input type="text" id="airline_manager_qq" name="airline_manager_qq" class="form-control">
+            </div>
+            <div class="form-group">
+                <button type="submit" class="admin-btn admin-btn-success">保存</button>
+                <button type="button" class="admin-btn admin-btn-secondary close-modal">取消</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 编辑航司模态框 -->
+<div id="editAirlineModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content" style="background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 50%; max-width: 600px; border-radius: 8px;">
+        <div class="modal-header" style="margin-bottom: 20px;">
+            <h2>编辑集团航司</h2>
+        </div>
+        <form action="{{ url_for('admin_airlines_edit') }}" method="POST">
+            <input type="hidden" id="edit_airline_id" name="airline_id">
+            <div class="form-group">
+                <label for="edit_airline_name">航司名称 <span style="color:red;">*</span></label>
+                <input type="text" id="edit_airline_name" name="airline_name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="edit_airline_group_number">航司群号</label>
+                <input type="text" id="edit_airline_group_number" name="airline_group_number" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="edit_airline_manager">负责人</label>
+                <input type="text" id="edit_airline_manager" name="airline_manager" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="edit_airline_manager_qq">负责人QQ号</label>
+                <input type="text" id="edit_airline_manager_qq" name="airline_manager_qq" class="form-control">
+            </div>
+            <div class="form-group">
+                <button type="submit" class="admin-btn admin-btn-primary">更新</button>
+                <button type="button" class="admin-btn admin-btn-secondary close-modal">取消</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// 模态框控制
+var addAirlineModal = document.getElementById('addAirlineModal');
+var editAirlineModal = document.getElementById('editAirlineModal');
+var closeModalBtns = document.getElementsByClassName('close-modal');
+var editButtons = document.querySelectorAll('[data-target="#editAirlineModal"]');
+
+// 添加关闭按钮事件处理
+var closeButtons = document.getElementsByClassName('close');
+Array.from(closeButtons).forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        addAirlineModal.style.display = 'none';
+        editAirlineModal.style.display = 'none';
+    });
+});
+
+// 点击编辑按钮显示模态框
+editButtons.forEach(function(button) {
+    button.addEventListener('click', function() {
+        var id = this.getAttribute('data-id');
+        var name = this.getAttribute('data-name');
+        
+        document.getElementById('edit_airline_id').value = id;
+        document.getElementById('edit_airline_name').value = name;
+        document.getElementById('edit_airline_group_number').value = this.getAttribute('data-group_number') || '';
+        document.getElementById('edit_airline_manager').value = this.getAttribute('data-manager') || '';
+        document.getElementById('edit_airline_manager_qq').value = this.getAttribute('data-manager_qq') || '';
+        
+        editAirlineModal.style.display = 'block';
+    });
+});
+
+// 关闭模态框
+Array.from(closeModalBtns).forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        addAirlineModal.style.display = 'none';
+        editAirlineModal.style.display = 'none';
+    });
+});
+
+// 点击模态框外部关闭
+window.addEventListener('click', function(event) {
+    if (event.target == addAirlineModal) {
+        addAirlineModal.style.display = 'none';
+    }
+    if (event.target == editAirlineModal) {
+        editAirlineModal.style.display = 'none';
+    }
+});
+</script>
+
+{% endblock %}

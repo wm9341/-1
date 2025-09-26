@@ -1,0 +1,146 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block page_title %}建议与意见管理{% endblock %}
+
+{% block admin_content %}
+<div class="admin-suggestions">
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3>建议与意见列表</h3>
+        </div>
+        <div class="admin-card-body">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>标题</th>
+                        <th>提交人</th>
+                        <th>提交时间</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for suggestion in suggestions %}
+                    <tr>
+                        <td>{{ suggestion.id }}</td>
+                        <td>{{ suggestion.title }}</td>
+                        <td>{{ suggestion.user.username if suggestion.user else '未知用户' }}</td>
+                        <td>{{ suggestion.created_at.strftime('%Y-%m-%d %H:%M:%S') if suggestion.created_at else 'N/A' }}</td>
+                        <td>
+                            {% if suggestion.status == 'pending' %}
+                            <span class="admin-badge admin-badge-yellow">待处理</span>
+                            {% elif suggestion.status == 'processing' %}
+                            <span class="admin-badge admin-badge-blue">处理中</span>
+                            {% elif suggestion.status == 'resolved' %}
+                            <span class="admin-badge admin-badge-green">已采纳</span>
+                            {% elif suggestion.status == 'rejected' %}
+                            <span class="admin-badge admin-badge-red">未采纳</span>
+                            {% else %}
+                            <span class="admin-badge admin-badge-gray">{{ suggestion.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="admin-btn-group">
+                                <button class="admin-btn admin-btn-primary admin-btn-sm" data-toggle="modal" data-target="#viewSuggestionModal" data-id="{{ suggestion.id }}" data-title="{{ suggestion.title }}" data-content="{{ suggestion.content }}" data-status="{{ suggestion.status }}">
+                                    查看
+                                </button>
+                                <form action="{{ url_for('admin_suggestions_update_status', suggestion_id=suggestion.id, status='resolved') }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="admin-btn admin-btn-success admin-btn-sm">
+                                        标记为已采纳
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('admin_suggestions_update_status', suggestion_id=suggestion.id, status='rejected') }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="admin-btn admin-btn-danger admin-btn-sm">
+                                        标记为未采纳
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if suggestions|length == 0 %}
+                    <tr>
+                        <td colspan="6" class="text-center">暂无建议与意见数据</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 查看建议与意见模态框 -->
+<div id="viewSuggestionModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content" style="background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 70%; max-width: 800px; border-radius: 8px;">
+        <div class="modal-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="modalSuggestionTitle"></h2>
+            <button type="button" class="close-modal" style="background: none; border: none; font-size: 28px; cursor: pointer;">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>建议内容：</label>
+                <div id="modalSuggestionContent" style="white-space: pre-wrap;"></div>
+            </div>
+            <div class="form-group">
+                <label>当前状态：</label>
+                <span id="modalSuggestionStatus"></span>
+            </div>
+        </div>
+        <div class="modal-footer" style="margin-top: 20px; text-align: right;">
+            <button type="button" class="admin-btn admin-btn-secondary close-modal">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// 模态框控制
+var viewSuggestionModal = document.getElementById('viewSuggestionModal');
+var closeModalBtns = document.getElementsByClassName('close-modal');
+var viewButtons = document.querySelectorAll('[data-target="#viewSuggestionModal"]');
+
+// 点击查看按钮显示模态框
+viewButtons.forEach(function(button) {
+    button.addEventListener('click', function() {
+        var id = this.getAttribute('data-id');
+        var title = this.getAttribute('data-title');
+        var content = this.getAttribute('data-content');
+        var status = this.getAttribute('data-status');
+        
+        document.getElementById('modalSuggestionTitle').textContent = '建议 #' + id + ': ' + title;
+        document.getElementById('modalSuggestionContent').textContent = content;
+        
+        // 设置状态标签
+        var statusElement = document.getElementById('modalSuggestionStatus');
+        if (status == 'pending') {
+            statusElement.innerHTML = '<span class="admin-badge admin-badge-yellow">待处理</span>';
+        } else if (status == 'processing') {
+            statusElement.innerHTML = '<span class="admin-badge admin-badge-blue">处理中</span>';
+        } else if (status == 'resolved') {
+            statusElement.innerHTML = '<span class="admin-badge admin-badge-green">已采纳</span>';
+        } else if (status == 'rejected') {
+            statusElement.innerHTML = '<span class="admin-badge admin-badge-red">未采纳</span>';
+        } else {
+            statusElement.innerHTML = '<span class="admin-badge admin-badge-gray">' + status + '</span>';
+        }
+        
+        viewSuggestionModal.style.display = 'block';
+    });
+});
+
+// 关闭模态框
+Array.from(closeModalBtns).forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        viewSuggestionModal.style.display = 'none';
+    });
+});
+
+// 点击模态框外部关闭
+window.addEventListener('click', function(event) {
+    if (event.target == viewSuggestionModal) {
+        viewSuggestionModal.style.display = 'none';
+    }
+});
+</script>
+
+{% endblock %}
